@@ -17,7 +17,7 @@ BUST_LIMITS = {
     "Kite": 6
 }
 DICE_FACE = {
-    1 : [BALLOON_COLORS[2], BALLOON_SHAPES[0]],
+    1: [BALLOON_COLORS[2], BALLOON_SHAPES[0]],
     2: [BALLOON_COLORS[2], BALLOON_SHAPES[1]],
     3: [BALLOON_COLORS[2], BALLOON_SHAPES[2]],
     4: [BALLOON_COLORS[1], BALLOON_SHAPES[0]],
@@ -52,8 +52,10 @@ def reroll_dice(dice, dice_to_reroll):
 
     reroll = roll_dice(nb_dice_to_reroll)
 
-    for index in dice_to_reroll:
-        dice[index] = reroll
+    for index, new_result in (zip(dice_to_reroll,range(nb_dice_to_reroll))):
+        dice[index] = reroll[new_result]
+
+    dice[len(dice)] = reroll[-1]
 
     return dice
 
@@ -81,6 +83,19 @@ def play_turn():
 
             dice[index] = rolled[index]
         print(dice)
+
+        if len(dice) < NUM_DICE:
+
+            reroll = input("Do you want to reroll? (y/n) ")
+            if reroll == "y":
+                dice_to_reroll = input("Which dice do you want to reroll? (e.g. 1 3 4) ")
+                dice_to_reroll = [int(i) for i in dice_to_reroll.split()]
+                dice = reroll_dice(dice, dice_to_reroll)
+                print(dice)
+            else:
+                break
+
+
         print(len(dice))
 
         c = Counter(x for xs in rolled for x in set(xs))
@@ -120,4 +135,4 @@ def play_game():
 
 
 # Play the game
-# play_game()
+play_game()
