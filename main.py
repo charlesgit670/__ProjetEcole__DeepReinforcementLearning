@@ -73,6 +73,23 @@ def is_busted(balloons_collected):
     return False
 
 
+def count_elements(d):
+    # Initialize an empty dictionary to store the counts
+    counts = {}
+
+    # Loop through the values of the input dictionary
+    for value_list in d.values():
+        for value in value_list:
+            # If the value is already in the counts dictionary, increment its count
+            if value in counts:
+                counts[value] += 1
+            # Otherwise, add the value to the dictionary with a count of 1
+            else:
+                counts[value] = 1
+
+    return counts
+
+
 def play_turn():
     """Play one turn of the game."""
     balloons_collected = {color: 0 for color in BALLOONS}
@@ -108,7 +125,8 @@ def play_turn():
 
             break
 
-    c = Counter(x for xs in rolled for x in set(xs))
+
+    c = count_elements(dice)
 
     return c
 
