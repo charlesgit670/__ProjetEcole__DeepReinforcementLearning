@@ -1,5 +1,5 @@
 import unittest
-from app_game import flatten, roll_dice, reroll_dice, is_busted, calculate_score, simulated_input
+from benchmark import flatten, roll_dice, reroll_dice, is_busted, calculate_score, simulated_input
 
 
 # [Include the entire code provided above here]
