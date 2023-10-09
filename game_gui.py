@@ -1,3 +1,9 @@
+import tkinter as tk
+from tkinter import ttk, messagebox, simpledialog
+import os
+from PIL import Image, ImageTk
+
+# Constants and game logic from your code...
 import random
 from collections import Counter
 import time
@@ -94,10 +100,7 @@ def play_turn():
         reroll = input("Do you want to reroll? (y/n) ")
         if reroll == "y":
 
-            dice_to_reroll = input("Which dice do you want to reroll? (e.g. 0 1 2 3 4) ")
-
-
-
+            dice_to_reroll = input("Which dice do you want to reroll? (e.g. 0 1 2 3 4 5) ")
             dice_to_reroll = [int(i) for i in dice_to_reroll.split()]
             dice = reroll_dice(dice, dice_to_reroll)
             print(dice)
@@ -157,5 +160,89 @@ def play_game():
 
 
 
-# Play the game
-play_game()
+
+
+
+class BalloonPopApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Balloon Pop!")
+        self.geometry("800x600")
+
+        # Game state
+        self.total_score = {color: 0 for color in BALLOONS}
+        self.current_score = 0
+        self.dice = {}
+
+        # Load images
+        self.dice_images = [ImageTk.PhotoImage(Image.open(f'dice_{i}.png')) for i in range(1, 7)]
+        self.balloon_images = {balloon: ImageTk.PhotoImage(Image.open(f'balloon_{balloon}.png')) for balloon in BALLOONS}
+
+        # Create widgets
+        self.create_widgets()
+
+    def create_widgets(self):
+        # Create frames for better layout management
+        self.top_frame = ttk.Frame(self)
+        self.top_frame.pack(fill=tk.X, pady=20)
+
+        self.middle_frame = ttk.Frame(self)
+        self.middle_frame.pack(pady=20)
+
+        self.bottom_frame = ttk.Frame(self)
+        self.bottom_frame.pack(fill=tk.X, pady=20)
+
+        # Score label
+        self.score_label = ttk.Label(self.top_frame, text=f"Your score: {self.current_score}", font=('Arial', 18))
+        self.score_label.pack(side=tk.LEFT, padx=10)
+
+        # Balloon icons
+        self.balloon_labels = {}
+        for balloon in BALLOONS:
+            self.balloon_labels[balloon] = ttk.Label(self.top_frame, image=self.balloon_images[balloon], text=f": {self.total_score[balloon]}", compound=tk.LEFT, font=('Arial', 16))
+            self.balloon_labels[balloon].pack(side=tk.LEFT, padx=10)
+
+        # Dice labels
+        self.dice_labels = [ttk.Label(self.middle_frame, image=self.dice_images[0]) for _ in range(NUM_DICE)]
+        for label in self.dice_labels:
+            label.pack(side=tk.LEFT, padx=10)
+
+        # Game buttons
+        self.start_button = ttk.Button(self.bottom_frame, text="Start Game", command=self.play_game)
+        self.start_button.pack(side=tk.LEFT, padx=10)
+
+        self.roll_button = ttk.Button(self.bottom_frame, text="Roll Dice", command=self.play_turn, state=tk.DISABLED)
+        self.roll_button.pack(side=tk.LEFT, padx=10)
+
+    def play_game(self):
+        self.roll_button["state"] = tk.NORMAL
+        for turn in range(NUM_BREAKS):
+            if not is_busted(self.total_score):
+                self.play_turn()
+        self.update_display()
+
+    def play_turn(self):
+        self.dice = roll_dice()
+        self.update_display()
+
+        # Ask if the user wants to reroll
+        reroll = messagebox.askyesno("Reroll", "Do you want to reroll?")
+        if reroll:
+            dice_indices = simpledialog.askstring("Reroll", "Which dice do you want to reroll? (e.g. 0 1 2)")
+            dice_to_reroll = list(map(int, dice_indices.split()))
+            self.dice = reroll_dice(self.dice, dice_to_reroll)
+            self.update_display()
+
+        balloons_collected = Counter(x for xs in self.dice.values() for x in set(xs))
+        self.total_score = calculate_score(self.total_score, balloons_collected)
+
+    def update_display(self):
+        self.score_label["text"] = f"Your score: {self.current_score}"
+        for balloon in BALLOONS:
+            self.balloon_labels[balloon]["text"] = f": {self.total_score[balloon]}"
+        for i, result in self.dice.items():
+            self.dice_labels[i]["image"] = self.dice_images[result[0] - 1]
+
+if __name__ == "__main__":
+    app = BalloonPopApp()
+    app.mainloop()
