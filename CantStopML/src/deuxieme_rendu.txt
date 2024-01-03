@@ -1,0 +1,56 @@
+2 eme gameplay cantstop
+
+file : automatic.py
+
+Nombre de parties en 1 sec : 120 parties (meilleur jet)
+
+file : main.py
+
+Jeu avec joueur humain
+
+Proposition de description d'une action du jeu (vecteur d'encoding) :
+L'action dans ce jeu peut être décomposé en plusieurs éléments :
+
+Proposition d'encodage de l'action :
+
+- cas 1 : choix du relancement de dés ou save state = vecteur de taille 1 (0 save state ou 1 relancement de dés)
+
+- cas 2 : apres relance de dés choix et presentation d'un nouveau vecteur d'etat des dés l'option ou progresser vecteur de taille 1 entre 1 et 22
+
+
+
+
+Proposition de description de l'état du jeu (vecteur d'encoding) :
+L'état du jeu peut être décomposé en plusieurs éléments :
+
+-l'etat des colonnes vecteur de taille 83 avec -1 si la colonne n'est pas joué 0 si elle est joué par le joueur 0 et 1 si elle est joué par le joueur 1
+
+(possible de rajouter une valeur dans ce vecteur d'etat pour decrire la progression de la colonneen cours)
+
+(remplacer le vide par des -1
+
+forme colonne [0,0] si case vide
+[1,2] si 2 save state au meme endroit
+[1,1] si bonze en montant
+
+Pro tip (prof) : un vecteur par colonne avec index de la position des joueurs [joueur1 save state, agent save state, bonze]
+
+[[[1], [1], [1]], [[1], [], [0], [], []], [[1], [1], [1], [1], [1], [1], [1]], [[], [], [], [0, 1], [], [], [], [], []], [[], [], [], [], [], [], [], [], [], [0, 1], []], [[], [], [], [], [], [0], [], [1], [], [], [], [], []], [[0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0]], [[], [1], [], [0], [], [], [], [], []], [[], [], [], [], [0], [1], []], [[1, 0], [], [], [], []], [[], [1], []]]
+
+-apres lancer de dés, vecteur de taille 22 avec par tuple le nom de la ou des colonnes a avancer, 0 si pas de progression possible
+
+Thrown: [6, 2, 6, 3]
+
+Select action for player #1 (Green):
+    1: (5, 12): New progress on 5
+    2: (5, 12): New progress on 12
+    3: (8, 9): New progress on 8
+    4: (8, 9): New progress on 9
+
+vector : [[5,0],[12,0],[8,0],[9,0],[0,0]...]
+
+Select action for player #1 (Green):
+    1: (2, 6): New progress on 2 and new progress on 6
+    2: (3, 5): New progress on 3 and new progress on 5
+
+vector : [[2,6],[3,5],[0,0],[0,0],[0,0]...]

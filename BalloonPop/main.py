@@ -1,6 +1,9 @@
 import random
 from collections import Counter
 import time
+import numpy as np
+
+
 
 # Constants
 BALLOON_COLORS = ["Yellow", "Blue", "Red"]
@@ -38,12 +41,19 @@ NUM_DICE = 5
 NUM_BREAKS = 3
 
 def flatten(l):
+    #
     return [item for sublist in l for item in sublist]
-def roll_dice(number_of_dice=NUM_DICE):
+def roll_dice(number_of_dice=NUM_DICE, headless=False):
     """Roll the dice and return a list of balloon colors."""
 
+    if not headless:
 
-    return [random.choice(list(DICE_FACE.values())) for i in range(number_of_dice)]
+        return [random.choice(list(DICE_FACE.values())) for _ in range(number_of_dice)]
+
+    else:
+
+        return [random.choice(list(DICE_FACE.keys())) for _ in range(number_of_dice)]
+
 
 
 def reroll_dice(dice, dice_to_reroll):
@@ -90,7 +100,7 @@ def count_elements(d):
     return counts
 
 
-def play_turn():
+def play_turn(headless=False):
     """Play one turn of the game."""
     balloons_collected = {color: 0 for color in BALLOONS}
     number_of_dice = 3
@@ -98,7 +108,9 @@ def play_turn():
     dice = {}
 
 
-    rolled = roll_dice(number_of_dice)
+    rolled = roll_dice(number_of_dice, headless)
+
+    print(rolled)
 
 
     for index in range(number_of_dice):
@@ -127,11 +139,13 @@ def play_turn():
 
 
     c = count_elements(dice)
+    print(c)
+    print("c")
 
     return c
 
 
-def calculate_score(total_score, balloons_collected):
+def calculate_score(total_score, balloons_collected, headless=False):
     """Calculate the score for the current turn."""
 
     for balloon, count in balloons_collected.items():
@@ -146,11 +160,13 @@ def count_score(total_score):
             scoring += BALLOON_SCORES[balloon][total_score[balloon]-1]
         else:
             scoring += 0
+
+
     return scoring
 
 
 
-def play_game():
+def play_game(headless=False):
     """Play the Balloon Pop! game."""
     total_score = {color: 0 for color in BALLOONS}
     current_score = 0
@@ -167,13 +183,39 @@ def play_game():
             balloons_collected = play_turn()
             total_score = calculate_score(total_score, balloons_collected)
 
+            print('total_score')
+            print(total_score)
+
 
         print(f"Your accumulated balloons are {total_score}")
         current_score += count_score(total_score)
         print(f"Your current accumulated score is {current_score}")
-        total_score = {color: 0 for color in BALLOONS}
+        total_score = {color: 0 for color in BALLOONS} #maybe it was reset balloons
+
+
+def play_game_agent_DRL(headless=True):
+    """Play the Balloon Pop! game."""
+    total_score = {color: 0 for color in BALLOONS}
+    current_score = 0
+    # initialize the score
+
+
+    for turn in range(NUM_BREAKS):
+
+        print(f"\n--- Turn {turn + 1} ---")
+
+        while not is_busted(total_score):
+            print(f"Your accumulated balloons are {total_score}")
+            print(f"The ultimate bust limits are {BUST_LIMITS}")
+            balloons_collected = play_turn(headless)
+            total_score = calculate_score(total_score, balloons_collected)
+
+
+
+
 
 
 
 # Play the game
 play_game()
+# play_game_agent_DRL()

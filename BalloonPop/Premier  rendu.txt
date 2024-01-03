@@ -57,6 +57,9 @@ Dé 2: [0, 1, 0, 0, 1, 0] (car il montre "Blue" et "Moon")
 Dé 3: [0, 0, 1, 0, 0, 1] (car il montre "Yellow" et "Kite")
 Dé 4: [1, 0, 0, 1, 0, 0] (car il montre "Red" et "Star" à nouveau)
 Dé 5: [1, 0, 0, 0, 0, 1] (car il montre "Red" et "Kite")
+
+[1, 3, 4 , 0, 0]
+
 Si nous concaténons tous ces vecteurs, nous obtenons :
 [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0]
 
