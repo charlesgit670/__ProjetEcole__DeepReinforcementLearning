@@ -1,0 +1,3 @@
+from src.visualization.log_analysis import plot_reward_lengh
+
+plot_reward_lengh("logs/TicTacToeEnv/double_deep_q_learning_with_prioritized_experience_replay/logs.json", 50)
