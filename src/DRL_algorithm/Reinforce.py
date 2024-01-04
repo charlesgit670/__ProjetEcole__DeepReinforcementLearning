@@ -51,9 +51,9 @@ def reinforce(env: SingleAgentEnv,
             mask = env.available_actions_mask()
 
             # a, lp = model.predict(s.reshape(1, len(s)), verbose=0)
-            a = model(s.reshape(1, len(s)), mask.reshape(1, len(mask)))
-            assert(np.sum(a) == 1.0)
-            np.random.choice(a)
+            pi = model(s.reshape(1, len(s)), mask.reshape(1, len(mask)))
+            assert(np.sum(pi) == 1.0)
+            a = np.random.choice([i for i in range(env.action_size)], p=pi)
 
             old_score = env.score()
             env.act_with_action_id(a)
@@ -93,21 +93,6 @@ def reinforce(env: SingleAgentEnv,
             os.makedirs(model_save_path)
         model.save(model_save_path)
 
-
-class SoftmaxWithMask(tf.keras.layers.Layer):
-    def __init__(self, **kwargs):
-        super(SoftmaxWithMask, self).__init__(**kwargs)
-
-    def build(self, input_shape):
-        super(SoftmaxWithMask, self).build(input_shape)
-
-    def call(self, x, mask):
-        # Implémentation de la fonction softmax
-        # ans = acceptable_softmax_with_mask(x)
-        return x
-
-    def compute_output_shape(self, input_shape):
-        return input_shape
 
 
 # def init_model(input_size, output_size, lr):
