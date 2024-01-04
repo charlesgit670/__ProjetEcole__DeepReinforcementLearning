@@ -12,7 +12,7 @@ from keras.optimizers import Adam
 from src.DRL_algorithm.function_utils import acceptable_softmax_with_mask, timing_decorator, apply_mask
 from src.agent_env import SingleAgentEnv
 
-def double_deep_q_learning(env: SingleAgentDeepEnv,
+def double_deep_q_learning(env: SingleAgentEnv,
                     gamma: float = 0.99999,
                     lr: float = 0.001,
                     epsilon: float = 0.2,

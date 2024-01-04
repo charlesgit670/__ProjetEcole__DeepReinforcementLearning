@@ -33,8 +33,6 @@ def acceptable_softmax_with_mask(X: np.ndarray, M: np.ndarray):
 
     return masked_exp_X / np.sum(masked_exp_X)
 
-import time
-
 def apply_mask(X: np.ndarray, M: np.ndarray):
     X = X * M
     indices_zero = np.where(M == 0)

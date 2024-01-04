@@ -170,7 +170,7 @@ def train_model(online_q_net, target_q_net, replay_buffer, batch_size, gamma):
     replay_buffer.batch_update(b_idx, td_errors)
 
 
-def double_deep_q_learning_with_prioritized_experience_replay(env: SingleAgentDeepEnv,
+def double_deep_q_learning_with_prioritized_experience_replay(env: SingleAgentEnv,
                     gamma: float = 0.99999,
                     lr: float = 0.001,
                     epsilon: float = 0.2,

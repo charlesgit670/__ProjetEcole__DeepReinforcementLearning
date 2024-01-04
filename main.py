@@ -1,9 +1,7 @@
-from src.DRL_algorithm.QL import q_learning
 from src.DRL_algorithm.DQN import deep_q_learning
 from src.DRL_algorithm.DoubleDQN import double_deep_q_learning
 from src.DRL_algorithm.DoubleDQN_ExperienceReplay import double_deep_q_learning_with_experience_replay
 from src.DRL_algorithm.DoubleDQN_PrioritizedExperienceReplay import double_deep_q_learning_with_prioritized_experience_replay
-# from src.agent_env.TicTacToeEnv import TicTacToeEnv
 from src.agent_env.TicTacToeEnv import TicTacToeEnv
 
 env = TicTacToeEnv(True)
