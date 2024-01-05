@@ -2,6 +2,8 @@ import sys
 import numpy as np
 import time
 
+import tensorflow as tf
+
 def timing_decorator(func):
     def wrapper(*args, **kwargs):
         start_time = time.time()
@@ -24,14 +26,22 @@ def argmax(dict):
             ties.append(key)
     return np.random.choice(ties)
 # @timing_decorator
-def acceptable_softmax_with_mask(X: np.ndarray, M: np.ndarray):
-    positive_X = X - np.min(X)
+def acceptable_softmax_with_mask(X: tf.Tensor, M: tf.Tensor):
+    # positive_X = (X.T - np.min(X, axis=1)).T
+    # masked_positive_X = positive_X * M
+    # max_X = np.max(masked_positive_X, axis=1)
+    # exp_X = np.exp(masked_positive_X.T - max_X).T
+    # masked_exp_X = exp_X * M
+    #
+    # return (masked_exp_X.T / np.sum(masked_exp_X, axis=1)).T
+
+    positive_X = tf.transpose(tf.transpose(X) - tf.reduce_min(X, axis=1))
     masked_positive_X = positive_X * M
-    max_X = np.max(masked_positive_X)
-    exp_X = np.exp(masked_positive_X - max_X)
+    max_X = tf.reduce_max(masked_positive_X, axis=1)
+    exp_X = tf.exp(tf.transpose(tf.transpose(masked_positive_X) - max_X))
     masked_exp_X = exp_X * M
 
-    return masked_exp_X / np.sum(masked_exp_X)
+    return tf.transpose(tf.transpose(masked_exp_X) / tf.reduce_sum(masked_exp_X, axis=1))
 
 def apply_mask(X: np.ndarray, M: np.ndarray):
     X = X * M
