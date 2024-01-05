@@ -11,7 +11,7 @@ from keras.optimizers import Adam
 from src.agent_env import SingleAgentEnv
 from src.DRL_algorithm.function_utils import acceptable_softmax_with_mask
 
-class CustomModel(tf.keras.Model):
+class PolicyModel(tf.keras.Model):
     def __init__(self, input_size, output_size):
         super().__init__()
         self.l1 = Dense(64, input_shape=(input_size,), bias_initializer=tf.keras.initializers.RandomNormal(), activation='relu')
@@ -26,33 +26,58 @@ class CustomModel(tf.keras.Model):
         x = acceptable_softmax_with_mask(x, mask)
         return x
 
-def train_model(model, opt, states, masks, actions, discount_rewards):
+class ValueModel(tf.keras.Model):
+    def __init__(self, input_size):
+        super().__init__()
+        self.l1 = Dense(64, input_shape=(input_size,), bias_initializer=tf.keras.initializers.RandomNormal(), activation='relu')
+        self.l2 = Dense(32, bias_initializer=tf.keras.initializers.RandomNormal(), activation='relu')
+        self.out = Dense(1, bias_initializer=tf.keras.initializers.RandomNormal(), activation='linear', dtype=tf.float32)
+
+    def call(self, input_data):
+        x = self.l1(input_data)
+        x = self.l2(x)
+        x = self.out(x)
+        return x
+
+def train_model(policy_model, value_model, opt_policy, opt_value, states, masks, actions, values, discount_rewards):
     states = np.array(states)
     masks = np.array(masks)
     actions = np.array(actions)
     discount_rewards = np.array(discount_rewards)
+    values = np.array(values)
+    deltas = discount_rewards - values
 
-    with tf.GradientTape() as tape:
-        p = model(states, masks, training=True)
-
+    with tf.GradientTape() as tape_policy:
+        p = policy_model(states, masks, training=True)
         indices = tf.range(0, tf.shape(p)[0]) * tf.shape(p)[1] + actions
         lp = tf.math.log(tf.gather(tf.reshape(p, [-1]), indices))
-        loss = -tf.reduce_sum(discount_rewards*lp)
+        policy_loss = -tf.reduce_sum(deltas*lp)
 
-    grads = tape.gradient(loss, model.trainable_variables)
-    opt.apply_gradients(zip(grads, model.trainable_variables))
+    with tf.GradientTape() as tape_value:
+        v = value_model(states, training=True)
+        value_loss = tf.keras.losses.mean_squared_error(v, discount_rewards)
 
-def reinforce(env: SingleAgentEnv,
+    policy_grads = tape_policy.gradient(policy_loss, policy_model.trainable_variables)
+    value_grads = tape_value.gradient(value_loss, value_model.trainable_variables)
+    opt_policy.apply_gradients(zip(policy_grads, policy_model.trainable_variables))
+    opt_value.apply_gradients(zip(value_grads, value_model.trainable_variables))
+
+
+def reinforce_baseline(env: SingleAgentEnv,
               gamma: float = 0.99999,
-              lr: float = 0.001,
+              lr_policy: float = 0.001,
+              lr_value: float = 0.001,
               max_episodes_count: int = 10000):
     # used for logs
     lenght_episodes = []
     reward_episodes = []
 
     # init model
-    model = CustomModel(env.state_size, env.action_size)
-    optimizer = Adam(learning_rate=lr)
+    policy_model = PolicyModel(env.state_size, env.action_size)
+    value_model = ValueModel(env.state_size)
+
+    optimizer_policy = Adam(learning_rate=lr_policy)
+    optimizer_value = Adam(learning_rate=lr_value)
 
 
     for ep_id in tqdm(range(max_episodes_count)):
@@ -62,13 +87,15 @@ def reinforce(env: SingleAgentEnv,
         masks = []
         rewards = []
         actions = []
+        values = []
 
         env.reset()
         while not env.is_game_over():
             s = env.state_vector()
             mask = env.available_actions_mask()
 
-            pi = model(s.reshape(1, len(s)), mask.reshape(1, len(mask)))
+            v = value_model(s.reshape(1, len(s))).numpy().item()
+            pi = policy_model(s.reshape(1, len(s)), mask.reshape(1, len(mask)))
             pi = np.array(pi).reshape(len(mask))
             assert (abs(np.sum(pi) - 1) < 1e-3)
             a = np.random.choice([i for i in range(env.action_size)], p=pi)
@@ -82,6 +109,7 @@ def reinforce(env: SingleAgentEnv,
             masks.append(mask)
             rewards.append(r)
             actions.append(a)
+            values.append(v)
 
             lenght_episode += 1
 
@@ -94,7 +122,7 @@ def reinforce(env: SingleAgentEnv,
         discount_rewards.reverse()
         discount_rewards = np.array(discount_rewards)
 
-        train_model(model, optimizer, states, masks, actions, discount_rewards)
+        train_model(policy_model, value_model, optimizer_policy, optimizer_value, states, masks, actions, values, discount_rewards)
 
         lenght_episodes.append(lenght_episode)
         reward_episodes.append(G)
@@ -104,14 +132,14 @@ def reinforce(env: SingleAgentEnv,
         "lenght_episodes": lenght_episodes,
         "reward_episodes": reward_episodes
     }
-    logs_path = os.path.join('logs', env.__class__.__name__, 'reinforce')
+    logs_path = os.path.join('logs', env.__class__.__name__, 'reinforce_baseline')
     logs_name = 'logs.json'
     if not os.path.exists(logs_path):
         os.makedirs(logs_path)
     with open(os.path.join(logs_path, logs_name), 'w') as file:
         json.dump(dict_logs, file)
 
-    model_save_path = 'model/REINFORCE/'
+    model_save_path = 'model/REINFORCE_BL/'
     if not os.path.exists(model_save_path):
         os.makedirs(model_save_path)
-    model.save(model_save_path)
+    policy_model.save(model_save_path)

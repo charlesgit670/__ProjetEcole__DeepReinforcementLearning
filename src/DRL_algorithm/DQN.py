@@ -31,7 +31,7 @@ def deep_q_learning(env: SingleAgentEnv,
         G = 0
         env.reset()
         while not env.is_game_over():
-            # start_time = time.time()
+
             s = env.state_vector()
             aa = env.available_actions_ids()
             mask = env.available_actions_mask()
@@ -39,8 +39,11 @@ def deep_q_learning(env: SingleAgentEnv,
             if np.random.random() < epsilon:
                 a = np.random.choice(aa)
             else:
-                Q_s = model.predict(s.reshape(1, len(s)), verbose=0)
-                a = np.argmax(apply_mask(Q_s, mask[None, :]))
+                # start_time = time.time()
+                Q_s = model(s.reshape(1, len(s)))
+                # end_time = time.time()
+                # print(end_time - start_time, " secondes")
+                a = np.argmax(apply_mask(np.array(Q_s), mask[None, :]))
 
             old_score = env.score()
             env.act_with_action_id(a)
@@ -54,8 +57,7 @@ def deep_q_learning(env: SingleAgentEnv,
             # append step to buffer
             buffer.append((s, a, r, s_p, is_game_done, mask))
 
-            # end_time = time.time()
-            # print(end_time - start_time, " secondes")
+
 
             G += gamma ** lenght_episode * r
             lenght_episode += 1
@@ -119,8 +121,8 @@ def train_model(model, buffer, gamma):
     is_game_over = np.array(is_game_over)
     mask = np.array(mask)
 
-    Q_s = model.predict(s, verbose=0)
-    Q_s_p = model.predict(s_p, verbose=0)
+    Q_s = np.array(model(s))
+    Q_s_p = np.array(model(s_p))
     y_tmp = r + gamma * np.max(apply_mask(Q_s_p, mask), axis=1) * (1 - is_game_over)
     y = Q_s.copy()
     ind = np.array([i for i in range(len(buffer))])
