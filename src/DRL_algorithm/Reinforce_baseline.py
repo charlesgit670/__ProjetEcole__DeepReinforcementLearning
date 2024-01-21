@@ -43,15 +43,19 @@ def train_model(policy_model, value_model, opt_policy, opt_value, states, masks,
     states = np.array(states)
     masks = np.array(masks)
     actions = np.array(actions)
-    discount_rewards = np.array(discount_rewards)
-    values = np.array(values)
+    discount_rewards = np.array(discount_rewards, dtype='float32')
+    values = np.array(values, dtype='float32')
     deltas = discount_rewards - values
 
+    my_train(policy_model, value_model, opt_policy, opt_value, states, masks, actions, deltas, discount_rewards)
+
+@tf.function
+def my_train(policy_model, value_model, opt_policy, opt_value, states, masks, actions, deltas, discount_rewards):
     with tf.GradientTape() as tape_policy:
         p = policy_model(states, masks, training=True)
         indices = tf.range(0, tf.shape(p)[0]) * tf.shape(p)[1] + actions
         lp = tf.math.log(tf.gather(tf.reshape(p, [-1]), indices))
-        policy_loss = -tf.reduce_sum(deltas*lp)
+        policy_loss = -tf.reduce_sum(deltas * lp)
 
     with tf.GradientTape() as tape_value:
         v = value_model(states, training=True)
@@ -61,6 +65,14 @@ def train_model(policy_model, value_model, opt_policy, opt_value, states, masks,
     value_grads = tape_value.gradient(value_loss, value_model.trainable_variables)
     opt_policy.apply_gradients(zip(policy_grads, policy_model.trainable_variables))
     opt_value.apply_gradients(zip(value_grads, value_model.trainable_variables))
+
+@tf.function
+def predict_value(model, input, training=False):
+    return model(input, training=training)
+
+@tf.function
+def predict_policy(model, input, mask, training=False):
+    return model(input, mask, training=training)
 
 
 def reinforce_baseline(env: SingleAgentEnv,
@@ -94,8 +106,8 @@ def reinforce_baseline(env: SingleAgentEnv,
             s = env.state_vector()
             mask = env.available_actions_mask()
 
-            v = value_model(s.reshape(1, len(s))).numpy().item()
-            pi = policy_model(s.reshape(1, len(s)), mask.reshape(1, len(mask)))
+            v = predict_value(value_model, s.reshape(1, len(s)))
+            pi = predict_policy(policy_model, s.reshape(1, len(s)), mask.reshape(1, len(mask)))
             pi = np.array(pi).reshape(len(mask))
             assert (abs(np.sum(pi) - 1) < 1e-3)
             a = np.random.choice([i for i in range(env.action_size)], p=pi)

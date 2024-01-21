@@ -26,12 +26,12 @@ class CustomModel(tf.keras.Model):
         x = acceptable_softmax_with_mask(x, mask)
         return x
 
-def train_model(model, opt, states, masks, actions, discount_rewards):
-    states = np.array(states)
-    masks = np.array(masks)
-    actions = np.array(actions)
-    discount_rewards = np.array(discount_rewards)
+@tf.function
+def my_predict(model, input, mask, training=False):
+    return model(input, mask, training=training)
 
+@tf.function
+def my_train(model, opt, states, masks, actions, discount_rewards):
     with tf.GradientTape() as tape:
         p = model(states, masks, training=True)
 
@@ -41,6 +41,14 @@ def train_model(model, opt, states, masks, actions, discount_rewards):
 
     grads = tape.gradient(loss, model.trainable_variables)
     opt.apply_gradients(zip(grads, model.trainable_variables))
+
+def train_model(model, opt, states, masks, actions, discount_rewards):
+    states = np.array(states, dtype='int32')
+    masks = np.array(masks, dtype='int32')
+    actions = np.array(actions, dtype='int32')
+    discount_rewards = np.array(discount_rewards, dtype='float32')
+
+    my_train(model, opt, states, masks, actions, discount_rewards)
 
 def reinforce(env: SingleAgentEnv,
               gamma: float = 0.99999,
@@ -68,7 +76,8 @@ def reinforce(env: SingleAgentEnv,
             s = env.state_vector()
             mask = env.available_actions_mask()
 
-            pi = model(s.reshape(1, len(s)), mask.reshape(1, len(mask)))
+            # pi = model(s.reshape(1, len(s)), mask.reshape(1, len(mask)))
+            pi = my_predict(model, s.reshape(1, len(s)), mask.reshape(1, len(mask)))
             pi = np.array(pi).reshape(len(mask))
             assert (abs(np.sum(pi) - 1) < 1e-3)
             a = np.random.choice([i for i in range(env.action_size)], p=pi)
