@@ -115,14 +115,16 @@ class Memory(object):  # stored as ( s, a, r, s_, done ) in SumTree
         for ti, p in zip(tree_idx, ps):
             self.tree.update(ti, p)
 
-def init_model(input_size, output_size, lr):
-    model = Sequential([
-        Dense(units=64, input_shape=(input_size,), bias_initializer=tf.keras.initializers.RandomNormal(), activation='relu'),
-        Dense(units=32, bias_initializer=tf.keras.initializers.RandomNormal(), activation='relu'),
-        Dense(units=output_size, bias_initializer=tf.keras.initializers.RandomNormal(), activation='linear')
-    ])
-    model.compile(loss='mse', optimizer=Adam(learning_rate=lr))
-    return model
+# def init_model(input_size, output_size, lr):
+#     model = Sequential([
+#         Dense(units=64, input_shape=(input_size,), bias_initializer=tf.keras.initializers.RandomNormal(), activation='relu'),
+#         Dense(units=32, bias_initializer=tf.keras.initializers.RandomNormal(), activation='relu'),
+#         Dense(units=output_size, bias_initializer=tf.keras.initializers.RandomNormal(), activation='linear')
+#     ])
+#     model.compile(loss='mse', optimizer=Adam(learning_rate=lr))
+#     return model
+
+
 
 def init_experience_replay(env, memory):
     replay_memory_size = memory.tree.capacity
@@ -149,15 +151,41 @@ def init_experience_replay(env, memory):
             memory.store(transition)
             i += 1
 
+class CustomModel(tf.keras.Model):
+    def __init__(self, input_size, output_size):
+        super().__init__()
+        self.l1 = Dense(64, input_shape=(input_size,), bias_initializer=tf.keras.initializers.RandomNormal(), activation='relu')
+        self.l2 = Dense(32, bias_initializer=tf.keras.initializers.RandomNormal(), activation='relu')
+        self.out = Dense(output_size, bias_initializer=tf.keras.initializers.RandomNormal(), activation='linear', dtype=tf.float32)
+
+    def call(self, input_data):
+        x = self.l1(input_data)
+        x = self.l2(x)
+        x = self.out(x)
+        return x
+
+    @tf.function
+    def predict(self, input_data, training=False):
+        return self(input_data, training=training)
+
+@tf.function
+def my_train(online_q_net, opt, s, y, ISWeights):
+    with tf.GradientTape() as tape:
+        Q_s_online = online_q_net(s, training=True)
+        loss = tf.reduce_mean(tf.square(Q_s_online - y) * ISWeights)
+
+    grads = tape.gradient(loss, online_q_net.trainable_variables)
+    opt.apply_gradients(zip(grads, online_q_net.trainable_variables))
+
 
 # @timing_decorator
-def train_model(online_q_net, target_q_net, replay_buffer, batch_size, gamma):
+def train_model(online_q_net, target_q_net, opt, replay_buffer, batch_size, gamma):
     # get batch samples
     b_idx, batch_samples, ISWeights = replay_buffer.sample(batch_size)
 
-    Q_s_online = online_q_net.predict(np.vstack(batch_samples[:, 0]), verbose=0)
-    Q_s_p_online = online_q_net.predict(np.vstack(batch_samples[:, 3]), verbose=0)
-    Q_s_p_target = target_q_net.predict(np.vstack(batch_samples[:, 3]), verbose=0)
+    Q_s_online = np.array(online_q_net.predict(np.vstack(batch_samples[:, 0])))
+    Q_s_p_online = np.array(online_q_net.predict(np.vstack(batch_samples[:, 3])))
+    Q_s_p_target = np.array(target_q_net.predict(np.vstack(batch_samples[:, 3])))
     best_a = np.argmax(apply_mask(Q_s_p_online, np.vstack(batch_samples[:, 5])), axis=1)
 
     ind = np.array([i for i in range(batch_size)])
@@ -165,7 +193,9 @@ def train_model(online_q_net, target_q_net, replay_buffer, batch_size, gamma):
     y = Q_s_online.copy()
     y[ind, batch_samples[:, 1].astype(int)] = y_tmp
 
-    online_q_net.fit(x=np.vstack(batch_samples[:, 0]), y=y, sample_weight=ISWeights, epochs=1, verbose=0)
+    my_train(online_q_net, opt, np.vstack(batch_samples[:, 0]), y, ISWeights.astype(np.float32))
+
+    # online_q_net.fit(x=np.vstack(batch_samples[:, 0]), y=y, sample_weight=ISWeights, epochs=1, verbose=0)
     td_errors = np.sum(y - Q_s_online, axis=1)
     replay_buffer.batch_update(b_idx, td_errors)
 
@@ -185,9 +215,15 @@ def double_deep_q_learning_with_prioritized_experience_replay(env: SingleAgentEn
     reward_episodes = []
 
     # init model
-    online_q_net = init_model(env.state_size, env.action_size, lr)
-    target_q_net = init_model(env.state_size, env.action_size, lr)
+    online_q_net = CustomModel(env.state_size, env.action_size)
+    target_q_net = CustomModel(env.state_size, env.action_size)
+    dummy_input = tf.constant([[0.0] * env.state_size], dtype=tf.float32)
+    # faire un predict à vide permet de provoquer l'iinitialisation des poids
+    online_q_net.predict(dummy_input)
+    target_q_net.predict(dummy_input)
+
     target_q_net.set_weights(online_q_net.get_weights())
+    optimizer = Adam(learning_rate=lr)
     # init prioritized replay experience
     replay_buffer = Memory(replay_memory_size, alpha=alpha, beta=beta, beta_increment_per_sampling=beta_increment_per_sampling)
     init_experience_replay(env, replay_buffer)
@@ -205,7 +241,7 @@ def double_deep_q_learning_with_prioritized_experience_replay(env: SingleAgentEn
             if np.random.random() < epsilon:
                 a = np.random.choice(aa)
             else:
-                Q_s = online_q_net.predict(s.reshape(1, len(s)), verbose=0)
+                Q_s = online_q_net.predict(s.reshape(1, len(s)))
                 a = np.argmax(apply_mask(Q_s, mask[None, :]))
 
             old_score = env.score()
@@ -227,9 +263,9 @@ def double_deep_q_learning_with_prioritized_experience_replay(env: SingleAgentEn
             lenght_episode += 1
 
         # train online model
-        train_model(online_q_net, target_q_net, replay_buffer, batch_size, gamma)
+        train_model(online_q_net, target_q_net, optimizer, replay_buffer, batch_size, gamma)
         # update target q net
-        if ep % 10 == 0:
+        if ep % 20 == 0:
             target_q_net.set_weights(online_q_net.get_weights())
 
         lenght_episodes.append(lenght_episode)

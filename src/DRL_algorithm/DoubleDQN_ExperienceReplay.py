@@ -5,11 +5,10 @@ from tqdm import tqdm
 # import time
 
 import tensorflow as tf
-from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
 
-from src.DRL_algorithm.function_utils import acceptable_softmax_with_mask, timing_decorator, apply_mask
+from src.DRL_algorithm.function_utils import timing_decorator, apply_mask
 from src.agent_env import SingleAgentEnv
 
 def double_deep_q_learning_with_experience_replay(env: SingleAgentEnv,
@@ -24,9 +23,15 @@ def double_deep_q_learning_with_experience_replay(env: SingleAgentEnv,
     reward_episodes = []
 
     # init model
-    online_q_net = init_model(env.state_size, env.action_size, lr)
-    target_q_net = init_model(env.state_size, env.action_size, lr)
+    online_q_net = CustomModel(env.state_size, env.action_size)
+    target_q_net = CustomModel(env.state_size, env.action_size)
+    dummy_input = tf.constant([[0.0] * env.state_size], dtype=tf.float32)
+    # faire un predict à vide permet de provoquer l'iinitialisation des poids
+    online_q_net.predict(dummy_input)
+    target_q_net.predict(dummy_input)
+
     target_q_net.set_weights(online_q_net.get_weights())
+    optimizer = Adam(learning_rate=lr)
     # init replay experience
     train_frequency_index = 0
     buffer_index = 0
@@ -45,7 +50,7 @@ def double_deep_q_learning_with_experience_replay(env: SingleAgentEnv,
             if np.random.random() < epsilon:
                 a = np.random.choice(aa)
             else:
-                Q_s = online_q_net.predict(s.reshape(1, len(s)), verbose=0)
+                Q_s = online_q_net.predict(s.reshape(1, len(s)))
                 a = np.argmax(apply_mask(Q_s, mask[None, :]))
 
             old_score = env.score()
@@ -71,7 +76,7 @@ def double_deep_q_learning_with_experience_replay(env: SingleAgentEnv,
             lenght_episode += 1
 
         # train online model
-        train_model(online_q_net, target_q_net, replay_buffer, batch_size, gamma)
+        train_model(online_q_net, target_q_net, optimizer, replay_buffer, batch_size, gamma)
         # update target q net
         if ep % 10 == 0:
             target_q_net.set_weights(online_q_net.get_weights())
@@ -97,15 +102,6 @@ def double_deep_q_learning_with_experience_replay(env: SingleAgentEnv,
     online_q_net.save(model_save_path)
 
 
-# @timing_decorator
-def init_model(input_size, output_size, lr):
-    model = Sequential([
-        Dense(units=64, input_shape=(input_size,), bias_initializer=tf.keras.initializers.RandomNormal(), activation='relu'),
-        Dense(units=32, bias_initializer=tf.keras.initializers.RandomNormal(), activation='relu'),
-        Dense(units=output_size, bias_initializer=tf.keras.initializers.RandomNormal(), activation='linear')
-    ])
-    model.compile(loss='mse', optimizer=Adam(learning_rate=lr))
-    return model
 # @timing_decorator
 def init_experience_replay(env, replay_memory_size):
     replay_buffer = np.zeros((replay_memory_size, 6), dtype=object)
@@ -134,15 +130,41 @@ def init_experience_replay(env, replay_memory_size):
 
     return replay_buffer
 
+class CustomModel(tf.keras.Model):
+    def __init__(self, input_size, output_size):
+        super().__init__()
+        self.l1 = Dense(64, input_shape=(input_size,), bias_initializer=tf.keras.initializers.RandomNormal(), activation='relu')
+        self.l2 = Dense(32, bias_initializer=tf.keras.initializers.RandomNormal(), activation='relu')
+        self.out = Dense(output_size, bias_initializer=tf.keras.initializers.RandomNormal(), activation='linear', dtype=tf.float32)
+
+    def call(self, input_data):
+        x = self.l1(input_data)
+        x = self.l2(x)
+        x = self.out(x)
+        return x
+
+    @tf.function
+    def predict(self, input_data, training=False):
+        return self(input_data, training=training)
+
+@tf.function
+def my_train(online_q_net, opt, s, y):
+    with tf.GradientTape() as tape:
+        Q_s_online = online_q_net(s, training=True)
+        loss = tf.reduce_mean(tf.square(Q_s_online - y))
+
+    grads = tape.gradient(loss, online_q_net.trainable_variables)
+    opt.apply_gradients(zip(grads, online_q_net.trainable_variables))
+
 # @timing_decorator
-def train_model(online_q_net, target_q_net, replay_buffer, batch_size, gamma):
+def train_model(online_q_net, target_q_net, opt, replay_buffer, batch_size, gamma):
     # get batch samples
     random_index = np.random.choice(len(replay_buffer), size=batch_size, replace=False)
     batch_samples = replay_buffer[random_index]
 
-    Q_s_online = online_q_net.predict(np.vstack(batch_samples[:, 0]), verbose=0)
-    Q_s_p_online = online_q_net.predict(np.vstack(batch_samples[:, 3]), verbose=0)
-    Q_s_p_target = target_q_net.predict(np.vstack(batch_samples[:, 3]), verbose=0)
+    Q_s_online = np.array(online_q_net.predict(np.vstack(batch_samples[:, 0])))
+    Q_s_p_online = np.array(online_q_net.predict(np.vstack(batch_samples[:, 3])))
+    Q_s_p_target = np.array(target_q_net.predict(np.vstack(batch_samples[:, 3])))
     best_a = np.argmax(apply_mask(Q_s_p_online, np.vstack(batch_samples[:, 5])), axis=1)
 
     ind = np.array([i for i in range(batch_size)])
@@ -150,7 +172,7 @@ def train_model(online_q_net, target_q_net, replay_buffer, batch_size, gamma):
     y = Q_s_online.copy()
     y[ind, batch_samples[:, 1].astype(int)] = y_tmp
 
-    online_q_net.fit(x=np.vstack(batch_samples[:, 0]), y=y, epochs=1, verbose=0)
+    my_train(online_q_net, opt, np.vstack(batch_samples[:, 0]), y)
 
 
 

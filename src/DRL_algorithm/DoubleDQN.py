@@ -5,7 +5,6 @@ from tqdm import tqdm
 import time
 
 import tensorflow as tf
-from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
 
@@ -24,7 +23,7 @@ def double_deep_q_learning(env: SingleAgentEnv,
     # init model
     online_q_net = CustomModel(env.state_size, env.action_size)
     target_q_net = CustomModel(env.state_size, env.action_size)
-    dummy_input = tf.constant([[0.0] * 18], dtype=tf.float32)
+    dummy_input = tf.constant([[0.0] * env.state_size], dtype=tf.float32)
     # faire un predict à vide permet de provoquer l'iinitialisation des poids
     online_q_net.predict(dummy_input)
     target_q_net.predict(dummy_input)
