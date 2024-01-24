@@ -9,7 +9,7 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
 
-from src.DRL_algorithm.function_utils import acceptable_softmax_with_mask, timing_decorator, apply_mask
+from src.DRL_algorithm.function_utils import timing_decorator, apply_mask
 from src.agent_env import SingleAgentEnv
 
 def deep_q_learning(env: SingleAgentEnv,
@@ -22,7 +22,8 @@ def deep_q_learning(env: SingleAgentEnv,
     reward_episodes = []
 
     # init model
-    model = init_model(env.state_size, env.action_size, lr)
+    model = CustomModel(env.state_size, env.action_size)
+    optimizer = Adam(learning_rate=lr)
     # init buffer that saved all transition in one episode
     buffer = []
 
@@ -39,10 +40,8 @@ def deep_q_learning(env: SingleAgentEnv,
             if np.random.random() < epsilon:
                 a = np.random.choice(aa)
             else:
-                # start_time = time.time()
-                Q_s = model(s.reshape(1, len(s)))
-                # end_time = time.time()
-                # print(end_time - start_time, " secondes")
+                # Q_s = model(s.reshape(1, len(s)))
+                Q_s = model.predict(s.reshape(1, len(s)))
                 a = np.argmax(apply_mask(np.array(Q_s), mask[None, :]))
 
             old_score = env.score()
@@ -63,7 +62,7 @@ def deep_q_learning(env: SingleAgentEnv,
             lenght_episode += 1
 
         # train model
-        train_model(model, buffer, gamma)
+        train_model(model, optimizer, buffer, gamma)
         buffer.clear()
 
         lenght_episodes.append(lenght_episode)
@@ -87,19 +86,35 @@ def deep_q_learning(env: SingleAgentEnv,
     model.save(model_save_path)
 
 
-# @timing_decorator
-def init_model(input_size, output_size, lr):
-    model = Sequential([
-        Dense(units=64, input_shape=(input_size,), bias_initializer=tf.keras.initializers.RandomNormal(), activation='relu'),
-        Dense(units=32, bias_initializer=tf.keras.initializers.RandomNormal(), activation='relu'),
-        Dense(units=output_size, bias_initializer=tf.keras.initializers.RandomNormal(), activation='linear')
-    ])
-    model.compile(loss='mse', optimizer=Adam(learning_rate=lr))
-    return model
+class CustomModel(tf.keras.Model):
+    def __init__(self, input_size, output_size):
+        super().__init__()
+        self.l1 = Dense(64, input_shape=(input_size,), bias_initializer=tf.keras.initializers.RandomNormal(), activation='relu')
+        self.l2 = Dense(32, bias_initializer=tf.keras.initializers.RandomNormal(), activation='relu')
+        self.out = Dense(output_size, bias_initializer=tf.keras.initializers.RandomNormal(), activation='linear', dtype=tf.float32)
+
+    def call(self, input_data):
+        x = self.l1(input_data)
+        x = self.l2(x)
+        x = self.out(x)
+        return x
+
+    @tf.function
+    def predict(self, input_data, training=False):
+        return self(input_data, training=training)
+
+@tf.function
+def my_train(model, opt, s, y):
+    with tf.GradientTape() as tape:
+        Q_s = model(s, training=True)
+        loss = tf.reduce_mean(tf.square(Q_s - y))
+
+    grads = tape.gradient(loss, model.trainable_variables)
+    opt.apply_gradients(zip(grads, model.trainable_variables))
 
 
 # @timing_decorator
-def train_model(model, buffer, gamma):
+def train_model(model, opt, buffer, gamma):
     s = []
     s_p = []
     r = []
@@ -121,14 +136,16 @@ def train_model(model, buffer, gamma):
     is_game_over = np.array(is_game_over)
     mask = np.array(mask)
 
-    Q_s = np.array(model(s))
-    Q_s_p = np.array(model(s_p))
+    Q_s = np.array(model.predict(s))
+    Q_s_p = np.array(model.predict(s_p))
     y_tmp = r + gamma * np.max(apply_mask(Q_s_p, mask), axis=1) * (1 - is_game_over)
     y = Q_s.copy()
     ind = np.array([i for i in range(len(buffer))])
     y[ind, a.astype(int)] = y_tmp
 
-    model.fit(x=s, y=y, epochs=1, verbose=0)
+    my_train(model, opt, s, y)
+
+    # model.fit(x=s, y=y, epochs=1, verbose=0)
 
 
 

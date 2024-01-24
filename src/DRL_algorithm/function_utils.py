@@ -44,6 +44,8 @@ def acceptable_softmax_with_mask(X: tf.Tensor, M: tf.Tensor):
     return tf.transpose(tf.transpose(masked_exp_X) / tf.reduce_sum(masked_exp_X, axis=1))
 
 def apply_mask(X: np.ndarray, M: np.ndarray):
+    X = np.array(X)
+    M = np.array(M)
     X = X * M
     indices_zero = np.where(M == 0)
     X[indices_zero[0], indices_zero[1]] = -sys.float_info.max
