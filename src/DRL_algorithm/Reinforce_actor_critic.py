@@ -75,11 +75,11 @@ def predict_policy(model, input, mask, training=False):
     return model(input, mask, training=training)
 
 
-def reinforce_baseline(env: SingleAgentEnv,
-              gamma: float = 0.99999,
-              lr_policy: float = 0.001,
-              lr_value: float = 0.001,
-              max_episodes_count: int = 10000):
+def reinforce_actor_critic(env: SingleAgentEnv,
+                           gamma: float = 0.99999,
+                           lr_policy: float = 0.001,
+                           lr_value: float = 0.001,
+                           max_episodes_count: int = 10000):
     # used for logs
     lenght_episodes = []
     reward_episodes = []
@@ -144,14 +144,14 @@ def reinforce_baseline(env: SingleAgentEnv,
         "lenght_episodes": lenght_episodes,
         "reward_episodes": reward_episodes
     }
-    logs_path = os.path.join('logs', env.__class__.__name__, 'reinforce_baseline')
+    logs_path = os.path.join('logs', env.__class__.__name__, 'reinforce_actor_critic')
     logs_name = 'logs.json'
     if not os.path.exists(logs_path):
         os.makedirs(logs_path)
     with open(os.path.join(logs_path, logs_name), 'w') as file:
         json.dump(dict_logs, file)
 
-    model_save_path = 'model/REINFORCE_BL/'
+    model_save_path = 'model/REINFORCE_AC/'
     if not os.path.exists(model_save_path):
         os.makedirs(model_save_path)
     policy_model.save(model_save_path)
