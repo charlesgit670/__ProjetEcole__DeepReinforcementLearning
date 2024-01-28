@@ -26,9 +26,10 @@ class CustomModel(tf.keras.Model):
         x = acceptable_softmax_with_mask(x, mask)
         return x
 
-@tf.function
-def my_predict(model, input, mask, training=False):
-    return model(input, mask, training=training)
+    @tf.function
+    def predict(self, input_data, mask, training=False):
+        return self(input_data, mask,  training=training)
+
 
 @tf.function
 def my_train(model, opt, states, masks, actions, discount_rewards, baseline):
@@ -36,8 +37,8 @@ def my_train(model, opt, states, masks, actions, discount_rewards, baseline):
         p = model(states, masks, training=True)
 
         indices = tf.range(0, tf.shape(p)[0]) * tf.shape(p)[1] + actions
-        lp = tf.math.log(tf.gather(tf.reshape(p, [-1]), indices))
-        loss = -tf.reduce_sum((discount_rewards - baseline) * lp)
+        lp = tf.math.log(tf.gather(tf.reshape(p, [-1]), indices)) # indices correspondant à la valeur de la policy pour l'action effectué
+        loss = -tf.reduce_mean((discount_rewards - baseline) * lp)
 
     grads = tape.gradient(loss, model.trainable_variables)
     opt.apply_gradients(zip(grads, model.trainable_variables))
@@ -80,7 +81,7 @@ def reinforce_mean_baseline(env: SingleAgentEnv,
             mask = env.available_actions_mask()
 
             # pi = model(s.reshape(1, len(s)), mask.reshape(1, len(mask)))
-            pi = my_predict(model, s.reshape(1, len(s)), mask.reshape(1, len(mask)))
+            pi = model.predict(s.reshape(1, len(s)), mask.reshape(1, len(mask)))
             pi = np.array(pi).reshape(len(mask))
             assert (abs(np.sum(pi) - 1) < 1e-3)
             a = np.random.choice([i for i in range(env.action_size)], p=pi)
@@ -107,8 +108,7 @@ def reinforce_mean_baseline(env: SingleAgentEnv,
         discount_rewards = np.array(discount_rewards)
 
         baseline += 0.01 * (np.mean(discount_rewards) - baseline)
-        # if ep_id % 100 == 0:
-        #     print(baseline)
+
         train_model(model, optimizer, states, masks, actions, discount_rewards, baseline)
 
         lenght_episodes.append(lenght_episode)

@@ -48,12 +48,17 @@ class ValueModel(tf.keras.Model):
         return self(input_data,  training=training)
 
 @tf.function
-def my_train(policy_model, value_model, opt_policy, opt_value, states, masks, actions, deltas, discount_rewards):
+def my_train(policy_model, value_model, opt_policy, opt_value, states, masks, actions, deltas, discount_rewards, actions_probs, epsilon, c2):
     with tf.GradientTape() as tape_policy:
         p = policy_model(states, masks, training=True)
         indices = tf.range(0, tf.shape(p)[0]) * tf.shape(p)[1] + actions # indices correspondant à la valeur de la policy pour l'action effectué
-        lp = tf.math.log(tf.gather(tf.reshape(p, [-1]), indices))
-        policy_loss = -tf.reduce_mean(deltas * lp)
+        current_actions_probs = tf.gather(tf.reshape(p, [-1]), indices)
+
+        ratio = current_actions_probs / actions_probs
+        clipped = tf.clip_by_value(ratio, 1 - epsilon, 1 + epsilon) * deltas
+        surrogate = tf.math.minimum(ratio * deltas, clipped)
+        entropy = current_actions_probs * tf.math.log(current_actions_probs)
+        policy_loss = - (tf.reduce_mean(surrogate) + c2 * tf.reduce_mean(entropy))
 
     with tf.GradientTape() as tape_value:
         v = value_model(states, training=True)
@@ -64,20 +69,23 @@ def my_train(policy_model, value_model, opt_policy, opt_value, states, masks, ac
     opt_policy.apply_gradients(zip(policy_grads, policy_model.trainable_variables))
     opt_value.apply_gradients(zip(value_grads, value_model.trainable_variables))
 
-def train_model(policy_model, value_model, opt_policy, opt_value, states, masks, actions, values, discount_rewards):
+def train_model(policy_model, value_model, opt_policy, opt_value, states, masks, actions, values, discount_rewards, actions_probs, epsilon, c2):
     states = np.array(states)
     masks = np.array(masks)
     actions = np.array(actions)
     discount_rewards = np.array(discount_rewards, dtype='float32')
     values = np.array(values, dtype='float32')
     deltas = discount_rewards - values
+    actions_probs = np.array(actions_probs, dtype='float32')
 
-    my_train(policy_model, value_model, opt_policy, opt_value, states, masks, actions, deltas, discount_rewards)
+    my_train(policy_model, value_model, opt_policy, opt_value, states, masks, actions, deltas, discount_rewards, actions_probs, epsilon, c2)
 
-def reinforce_actor_critic(env: SingleAgentEnv,
+def ppo_a2c(env: SingleAgentEnv,
                            gamma: float = 0.99999,
                            lr_policy: float = 0.001,
                            lr_value: float = 0.001,
+                           epsilon: float = 0.2,
+                           c2: float = 0.01,
                            max_episodes_count: int = 10000):
     # used for logs
     lenght_episodes = []
@@ -99,6 +107,7 @@ def reinforce_actor_critic(env: SingleAgentEnv,
         rewards = []
         actions = []
         values = []
+        actions_probs = []
 
         env.reset()
         while not env.is_game_over():
@@ -121,6 +130,7 @@ def reinforce_actor_critic(env: SingleAgentEnv,
             rewards.append(r)
             actions.append(a)
             values.append(v.numpy()[0, 0])
+            actions_probs.append(pi[a])
 
             lenght_episode += 1
 
@@ -133,7 +143,7 @@ def reinforce_actor_critic(env: SingleAgentEnv,
         discount_rewards.reverse()
         discount_rewards = np.array(discount_rewards)
 
-        train_model(policy_model, value_model, optimizer_policy, optimizer_value, states, masks, actions, values, discount_rewards)
+        train_model(policy_model, value_model, optimizer_policy, optimizer_value, states, masks, actions, values, discount_rewards, actions_probs, epsilon, c2)
 
         lenght_episodes.append(lenght_episode)
         reward_episodes.append(G)
@@ -143,14 +153,14 @@ def reinforce_actor_critic(env: SingleAgentEnv,
         "lenght_episodes": lenght_episodes,
         "reward_episodes": reward_episodes
     }
-    logs_path = os.path.join('logs', env.__class__.__name__, 'reinforce_actor_critic')
+    logs_path = os.path.join('logs', env.__class__.__name__, 'ppo_a2c')
     logs_name = 'logs.json'
     if not os.path.exists(logs_path):
         os.makedirs(logs_path)
     with open(os.path.join(logs_path, logs_name), 'w') as file:
         json.dump(dict_logs, file)
 
-    model_save_path = 'model/REINFORCE_AC/'
+    model_save_path = 'model/PPO_A2C/'
     if not os.path.exists(model_save_path):
         os.makedirs(model_save_path)
     policy_model.save(model_save_path)
