@@ -3,6 +3,7 @@ import json
 import numpy as np
 from tqdm import tqdm
 # import time
+from collections import deque
 
 import tensorflow as tf
 from keras.layers import Dense
@@ -69,16 +70,30 @@ def my_train(policy_model, value_model, opt_policy, opt_value, states, masks, ac
     opt_policy.apply_gradients(zip(policy_grads, policy_model.trainable_variables))
     opt_value.apply_gradients(zip(value_grads, value_model.trainable_variables))
 
-def train_model(policy_model, value_model, opt_policy, opt_value, states, masks, actions, values, discount_rewards, actions_probs, epsilon, c2):
-    states = np.array(states)
-    masks = np.array(masks)
-    actions = np.array(actions)
-    discount_rewards = np.array(discount_rewards, dtype='float32')
-    values = np.array(values, dtype='float32')
-    deltas = discount_rewards - values
-    actions_probs = np.array(actions_probs, dtype='float32')
+def train_model(policy_model, value_model, opt_policy, opt_value, buffer, epsilon, c2, epochs, n_steps, batch_size):
+    buffer = np.array(buffer)
+    # states = np.array(states)
+    # masks = np.array(masks)
+    # actions = np.array(actions)
+    # discount_rewards = np.array(discount_rewards, dtype='float32')
+    # values = np.array(values, dtype='float32')
+    # deltas = discount_rewards - values
+    # actions_probs = np.array(actions_probs, dtype='float32')
 
-    my_train(policy_model, value_model, opt_policy, opt_value, states, masks, actions, deltas, discount_rewards, actions_probs, epsilon, c2)
+    for _ in range(epochs):
+        buffer = np.random.permutation(buffer)
+        states = np.vstack(buffer[:, 0])
+        masks = np.vstack(buffer[:, 1])
+        actions = np.array(buffer[:, 2], dtype='int32')
+        discount_rewards = np.array(buffer[:, 4], dtype='float32')
+        values = np.array(buffer[:, 3], dtype='float32')
+        deltas = discount_rewards - values
+        actions_probs = np.array(buffer[:, 5], dtype='float32')
+
+        for i in range(0, n_steps, batch_size):
+            my_train(policy_model, value_model, opt_policy, opt_value, states[i: i+batch_size], masks[i: i+batch_size],
+                     actions[i: i+batch_size], deltas[i: i+batch_size], discount_rewards[i: i+batch_size],
+                     actions_probs[i: i+batch_size], epsilon, c2)
 
 def ppo_a2c(env: SingleAgentEnv,
                            gamma: float = 0.99999,
@@ -86,7 +101,12 @@ def ppo_a2c(env: SingleAgentEnv,
                            lr_value: float = 0.001,
                            epsilon: float = 0.2,
                            c2: float = 0.01,
+                           epochs: int = 3,
+                           batch_size: int = 32,
+                           n_steps: int = 512,
                            max_episodes_count: int = 10000):
+
+    assert(n_steps % batch_size == 0)
     # used for logs
     lenght_episodes = []
     reward_episodes = []
@@ -98,6 +118,8 @@ def ppo_a2c(env: SingleAgentEnv,
     optimizer_policy = Adam(learning_rate=lr_policy)
     optimizer_value = Adam(learning_rate=lr_value)
 
+    buffer = deque(maxlen=n_steps)
+    count_step = 0
 
     for ep_id in tqdm(range(max_episodes_count)):
         lenght_episode = 0
@@ -133,6 +155,7 @@ def ppo_a2c(env: SingleAgentEnv,
             actions_probs.append(pi[a])
 
             lenght_episode += 1
+            count_step += 1
 
         G = 0
         discount_rewards = []
@@ -143,10 +166,15 @@ def ppo_a2c(env: SingleAgentEnv,
         discount_rewards.reverse()
         discount_rewards = np.array(discount_rewards)
 
-        train_model(policy_model, value_model, optimizer_policy, optimizer_value, states, masks, actions, values, discount_rewards, actions_probs, epsilon, c2)
+        for i in range(len(states)):
+            buffer.append(np.array((states[i], masks[i], actions[i], values[i], discount_rewards[i], actions_probs[i]), dtype=object))
 
         lenght_episodes.append(lenght_episode)
         reward_episodes.append(G)
+
+        if count_step >= n_steps:
+            train_model(policy_model, value_model, optimizer_policy, optimizer_value, buffer, epsilon, c2, epochs, n_steps, batch_size)
+            count_step = 0
 
     # save logs
     dict_logs = {
