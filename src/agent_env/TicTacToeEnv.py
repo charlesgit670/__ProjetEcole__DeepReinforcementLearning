@@ -35,6 +35,7 @@ class TicTacToeEnv(SingleAgentDeepEnv):
 
     def act_with_action_id(self, action_id: int):
         assert(not self.is_game_over())
+        print('action id : ', action_id, 'available : ', self.available_actions_ids())
         assert(action_id in self.available_actions_ids())
         self.states[action_id] = 1 if self.play_first else 2
         # random policy for opponent

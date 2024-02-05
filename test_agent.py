@@ -49,7 +49,7 @@ for e in range(episodes):
 
         if done:
             print('reward_e ' + str(reward_e))
-            game.close()
+
             break
 
     rewards.append(reward_e)

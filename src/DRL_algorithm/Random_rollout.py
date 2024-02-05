@@ -229,7 +229,7 @@ def Policy_Player_MCTS(mytree):
         - explore the tree starting from that node for a certain number of iterations to collect reliable statistics
         - pick the node that, according to MCTS, is the best possible next action
     '''
-
+#add timer
     for i in range(MCTS_POLICY_EXPLORE):
         mytree.explore()
 
