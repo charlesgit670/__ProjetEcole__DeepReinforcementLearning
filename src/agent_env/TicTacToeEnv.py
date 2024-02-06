@@ -35,7 +35,7 @@ class TicTacToeEnv(SingleAgentDeepEnv):
 
     def act_with_action_id(self, action_id: int):
         assert(not self.is_game_over())
-        print('action id : ', action_id, 'available : ', self.available_actions_ids())
+        # print('action id : ', action_id, 'available : ', self.available_actions_ids())
         assert(action_id in self.available_actions_ids())
         self.states[action_id] = 1 if self.play_first else 2
         # random policy for opponent
@@ -77,6 +77,21 @@ class TicTacToeEnv(SingleAgentDeepEnv):
         self.states = np.zeros(9)
         if not self.play_first:
             self.states[np.random.choice(self.available_actions_ids())] = 1
+
+    def reset_with_states(self, states):
+        assert (len(states) == self.state_size)
+        assert (all(state == 0 or state == 1 for state in states))
+        states_intern = []
+        for i in range(0, len(states), 2):
+            if states[i] == 0 and states[i + 1] == 0:
+                states_intern.append(0)
+            elif states[i] == 1 and states[i + 1] == 0:
+                states_intern.append(1)
+            elif states[i] == 0 and states[i + 1] == 1:
+                states_intern.append(2)
+            else:
+                raise Exception("Les 2 joueurs ont joué sur la même case")
+        self.states = np.array(states_intern)
 
     def view(self):
         for cell in range(self.cells_count):
