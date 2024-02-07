@@ -34,6 +34,7 @@ class TicTacToeEnv(SingleAgentDeepEnv):
         return False
 
     def act_with_action_id(self, action_id: int):
+
         assert not self.is_game_over(), "Attempted to act in a finished game."
         if action_id not in self.available_actions_ids():
             # Properly format the error message
