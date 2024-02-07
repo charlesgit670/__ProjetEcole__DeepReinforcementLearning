@@ -1,6 +1,9 @@
 from copy import deepcopy
 from tqdm import tqdm
-from src.DRL_algorithm.Random_rollout import Node, Policy_Player_MCTS
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from src.DRL_algorithm.MCTS import Node, Policy_Player_MCTS
 
 from src.agent_env.TicTacToeEnv import TicTacToeEnv
 
@@ -33,11 +36,21 @@ for e in range(episodes):
         mytree, action = Policy_Player_MCTS(mytree)
 
         print('action: ' + str(action))
+        print('main available actions: ' + str(game.available_actions_ids()))
+
         print('mytree.N: ' + str(mytree.N))
 
         game.act_with_action_id(action)
 
+        print('next available actions: ' + str(game.available_actions_ids()))
+
         observation = game.state_vector()
+
+        print('mytree observation: ' + str(mytree.observation))
+
+        print('observation: ' + str(observation))
+
+        print('parent : ', mytree.parent)
 
         reward = game.score()
 
@@ -45,11 +58,15 @@ for e in range(episodes):
 
         reward_e = reward_e + reward
 
+        new_game = deepcopy(game)
+
+        mytree = Node(new_game, False, 0, observation, 0)
+
         # game.render() # uncomment this if you want to see your agent in action!
 
         if done:
             print('reward_e ' + str(reward_e))
-
+            game.reset()
             break
 
     rewards.append(reward_e)

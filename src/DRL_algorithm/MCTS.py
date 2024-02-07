@@ -16,7 +16,7 @@ import random
 from collections import defaultdict, deque
 from copy import deepcopy
 
-c = 1.0
+c = sqrt(2)
 
 
 class Node:
@@ -88,7 +88,10 @@ class Node:
 
         actions = []
         games = []
+
         for i in self.game.available_actions_ids():
+
+            print('action: create child', i)
             actions.append(i)
             new_game = deepcopy(self.game)
             games.append(new_game)
@@ -126,12 +129,27 @@ class Node:
 
         while current.child:
 
+
+
             child = current.child
+
+
             max_U = max(c.getUCBscore() for c in child.values())
+
+
+
             actions = [a for a, c in child.items() if c.getUCBscore() == max_U]
+
+
+
+
+
             if len(actions) == 0:
                 print("error zero length ", max_U)
+
             action = random.choice(actions)
+
+
             current = child[action]
 
         # play a random game, or expand if needed
@@ -142,7 +160,19 @@ class Node:
             current.create_child()
             if current.child:
 
-                current = current.child[random.choice(list(current.child))]
+
+                index = (list(current.child))
+
+                print('index sob: ', index)
+
+
+
+                rand_index = random.choice(index)
+
+                print('rand_index: ', rand_index)
+
+                current = current.child[rand_index]
+
             current.T = current.T + current.rollout()
 
         current.N += 1
@@ -173,6 +203,7 @@ class Node:
         new_game = deepcopy(self.game)
         while not done:
             aa = new_game.available_actions_ids()
+
 
             action = np.random.choice(aa)
 
@@ -206,15 +237,37 @@ class Node:
             raise ValueError('no children found and game hasn\'t ended')
 
         child = self.child
+        # verify child  are in  available_actions_ids
+
+        print(child)
+
+        child = {a: c for a, c in child.items() if a in self.game.available_actions_ids()}
+
+        print(type(child.items()))
+        print('child in  next :', child)
+        print(type(child))
 
         max_N = max(node.N for node in child.values())
+
+
+        #verify child = are in  available_actions_ids
+
 
         max_children = [c for a, c in child.items() if c.N == max_N]
 
         if len(max_children) == 0:
             print("error zero length ", max_N)
 
+
+        for a, c in child.items():
+            print('action: ', a, ' N: ', c.N, ' T: ', c.T, ' UCB: ', c.getUCBscore())
+
+        for c in max_children:
+            print('max_children: ', c.action_index)
+
         max_child = random.choice(max_children)
+
+        print('max_child: ', max_child.action_index)
 
         return max_child, max_child.action_index
 
@@ -232,6 +285,13 @@ def Policy_Player_MCTS(mytree):
 #add timer
     for i in range(MCTS_POLICY_EXPLORE):
         mytree.explore()
+
+
+
+    print('matree observ ' + str(mytree.observation))
+
+    print('matree typee observ ' , type(mytree))
+
 
     next_tree, next_action = mytree.next()
 
