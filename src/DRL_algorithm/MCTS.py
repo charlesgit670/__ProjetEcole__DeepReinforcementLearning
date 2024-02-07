@@ -16,7 +16,7 @@ import random
 from collections import defaultdict, deque
 from copy import deepcopy
 
-c = sqrt(2)
+c = sqrt(2)    # MCTS exploring constant: the higher, the more reliable, but slower in execution time
 
 
 class Node:
@@ -91,7 +91,6 @@ class Node:
 
         for i in self.game.available_actions_ids():
 
-            print('action: create child', i)
             actions.append(i)
             new_game = deepcopy(self.game)
             games.append(new_game)
@@ -133,8 +132,16 @@ class Node:
 
             child = current.child
 
+            for c in child.values():
+                print('child.N: ' + str(c.N))
+                print('child.T: ' + str(c.T))
+                print('child.action_index: ' + str(c.action_index))
+                print('ucb score: ' + str(c.getUCBscore()))
+
 
             max_U = max(c.getUCBscore() for c in child.values())
+
+            print('max_U: ' + str(max_U))
 
 
 
@@ -163,13 +170,9 @@ class Node:
 
                 index = (list(current.child))
 
-                print('index sob: ', index)
-
-
 
                 rand_index = random.choice(index)
 
-                print('rand_index: ', rand_index)
 
                 current = current.child[rand_index]
 
@@ -211,11 +214,13 @@ class Node:
 
             observation = new_game.state_vector()
 
-            reward = new_game.score()
-
             done = new_game.is_game_over()
-            v = v + reward
+
             if done:
+                reward = new_game.score()
+
+                v = v + reward
+
                 new_game.reset()
 
                 break
@@ -239,13 +244,10 @@ class Node:
         child = self.child
         # verify child  are in  available_actions_ids
 
-        print(child)
+
 
         child = {a: c for a, c in child.items() if a in self.game.available_actions_ids()}
 
-        print(type(child.items()))
-        print('child in  next :', child)
-        print(type(child))
 
         max_N = max(node.N for node in child.values())
 
@@ -259,20 +261,15 @@ class Node:
             print("error zero length ", max_N)
 
 
-        for a, c in child.items():
-            print('action: ', a, ' N: ', c.N, ' T: ', c.T, ' UCB: ', c.getUCBscore())
 
-        for c in max_children:
-            print('max_children: ', c.action_index)
 
         max_child = random.choice(max_children)
 
-        print('max_child: ', max_child.action_index)
 
         return max_child, max_child.action_index
 
 
-MCTS_POLICY_EXPLORE = 100  # MCTS exploring constant: the higher, the more reliable, but slower in execution time
+MCTS_POLICY_EXPLORE = 4_000  # MCTS exploring constant: the higher, the more reliable, but slower in execution time
 
 
 def Policy_Player_MCTS(mytree):
@@ -288,12 +285,14 @@ def Policy_Player_MCTS(mytree):
 
 
 
-    print('matree observ ' + str(mytree.observation))
-
-    print('matree typee observ ' , type(mytree))
-
 
     next_tree, next_action = mytree.next()
+
+    print('mytree.N: ' + str(next_tree.N))
+    print('mytree.T: ' + str(next_tree.T))
+    print('observation: ' + str(next_tree.observation))
+    print('action: ' + str(next_action))
+
 
     # note that here we are detaching the current node and returning the sub-tree
     # that starts from the node rooted at the choosen action.

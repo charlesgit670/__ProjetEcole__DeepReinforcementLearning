@@ -7,9 +7,12 @@ from src.DRL_algorithm.MCTS import Node, Policy_Player_MCTS
 
 from src.agent_env.TicTacToeEnv import TicTacToeEnv
 
-episodes = 10
+episodes = 100
 rewards = []
 moving_average = []
+
+length_episodes = []
+length_episodes_average = []
 
 '''
 Here we are experimenting with our implementation:
@@ -31,7 +34,13 @@ for e in range(episodes):
 
     print('episode #' + str(e + 1))
 
+
+
+    len_episode = 0
+
     while not done:
+
+        len_episode += 1
 
         mytree, action = Policy_Player_MCTS(mytree)
 
@@ -50,8 +59,6 @@ for e in range(episodes):
 
         print('observation: ' + str(observation))
 
-        print('parent : ', mytree.parent)
-
         reward = game.score()
 
         done = game.is_game_over()
@@ -60,7 +67,9 @@ for e in range(episodes):
 
         new_game = deepcopy(game)
 
-        mytree = Node(new_game, False, 0, observation, 0)
+        if not done:
+
+            mytree = Node(new_game, False, 0, observation, 0)
 
         # game.render() # uncomment this if you want to see your agent in action!
 
@@ -70,9 +79,24 @@ for e in range(episodes):
             break
 
     rewards.append(reward_e)
-    moving_average.append(np.mean(rewards[-100:]))
+    moving_average.append(np.mean(rewards[-50:]))
+    length_episodes.append(len_episode)
+    length_episodes_average.append(np.mean(length_episodes[-50:]))
 
-plt.plot(rewards)
-plt.plot(moving_average)
+mean_rewards = np.mean(rewards)
+
+plt.title('Rewards')
+plt.plot(rewards, label='rewards')
+plt.plot(moving_average, label='moving average')
+plt.axline((0, mean_rewards), (len(rewards), mean_rewards), color='r', label='mean reward')
+plt.xlabel('episodes')
+plt.ylabel('reward')
+plt.show()
+
+plt.title('length of episodes')
+plt.plot(length_episodes, label='length of episodes')
+plt.plot(length_episodes_average, label='moving average')
+plt.xlabel('episodes')
+plt.ylabel('length of episodes')
 plt.show()
 print('moving average: ' + str(np.mean(rewards[-20:])))
