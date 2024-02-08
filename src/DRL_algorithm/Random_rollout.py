@@ -28,7 +28,7 @@ def random_rollout(env: SingleAgentEnv, max_time=1):
     best_action = max(action_played, key=lambda k: resultat_storage[k][1] / resultat_storage[k][0])
     return best_action
 
-def random_rollout_evaluation(env: SingleAgentEnv, gamma: float = 0.99999, time_per_action: float = 0.1, max_episodes_count: int = 10000):
+def random_rollout_evaluation(env: SingleAgentEnv, gamma: float = 0.99999, time_per_action: float = 0.1, max_episodes_count: int = 100):
     # used for logs
     lenght_episodes = []
     reward_episodes = []
