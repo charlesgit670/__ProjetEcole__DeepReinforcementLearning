@@ -13,9 +13,26 @@ from src.DRL_algorithm.function_utils import timing_decorator, apply_mask
 from src.agent_env import SingleAgentEnv
 
 def deep_q_learning(env: SingleAgentEnv,
-                    gamma: float = 0.99999,
-                    lr: float = 0.001,
-                    epsilon: float = 0.2,
+                    # Cautious Learner:
+                    gamma: float = 0.99,
+                    lr: float = 0.0001,
+                    epsilon: float = 0.1,
+
+                    # Balanced Strategist:
+                    # gamma: float = 0.5,
+                    # lr: float = 0.01,
+                    # epsilon: float = 0.75,
+
+                    # Bold Explorer:
+                    # gamma: float = 0.8,
+                    # lr: float = 0.1,
+                    # epsilon: float = 0.5,
+
+                    # default values:
+                    # gamma: float = 0.99999,
+                    # lr: float = 0.001,
+                    # epsilon: float = 0.2,
+
                     max_episodes_count: int = 10000):
     # used for logs
     lenght_episodes = []
@@ -74,7 +91,7 @@ def deep_q_learning(env: SingleAgentEnv,
         "reward_episodes": reward_episodes
     }
     logs_path = os.path.join('logs', env.__class__.__name__, 'deep_q_learning')
-    logs_name = 'logs.json'
+    logs_name = 'logs_cautious_learner.json'
     if not os.path.exists(logs_path):
         os.makedirs(logs_path)
     with open(os.path.join(logs_path, logs_name), 'w') as file:
