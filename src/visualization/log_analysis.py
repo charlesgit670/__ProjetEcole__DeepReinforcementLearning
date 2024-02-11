@@ -26,3 +26,67 @@ def plot_reward_lengh(path_logs, mean_param=100):
         ax2.plot(x_axis, mean_rewards)
 
         plt.show()
+
+
+def plot_multiple_logs(log_paths, mean_param=100):
+    """
+    Plots mean rewards and lengths for multiple log files, with the legend outside the plot.
+
+    Args:
+    - log_paths (list of str): A list of paths to the log files.
+    - mean_param (int): The number of points to calculate the mean over. Default is 100.
+
+    Returns:
+    Two plots: one for the mean lengths and one for the mean rewards.
+    """
+    import json
+    import matplotlib.pyplot as plt
+
+    # Initialize the plot
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 10))
+
+    # Iterate through each log file path
+    for path in log_paths:
+        # Open and load the log file
+        with open(path, 'r') as file:
+            logs = json.load(file)
+
+            # Extract the relevant data
+            length_episodes = logs["lenght_episodes"]
+            reward_episodes = logs["reward_episodes"]
+
+            # Compute the mean lengths and rewards
+            # Ensuring the correct length for the mean calculation
+            mean_lengths = [sum(length_episodes[i:i + mean_param]) / mean_param
+                            for i in range(0, len(length_episodes), mean_param)
+                            if i + mean_param <= len(length_episodes)]
+            mean_rewards = [sum(reward_episodes[i:i + mean_param]) / mean_param
+                            for i in range(0, len(reward_episodes), mean_param)
+                            if i + mean_param <= len(reward_episodes)]
+
+            # Plot the means on the respective subplots
+            ax1.plot(mean_lengths, label=f"{path.split('/')[-1]}")
+            ax2.plot(mean_rewards, label=f"{path.split('/')[-1]}")
+
+    # Configure the first subplot (mean lengths)
+    ax1.set_title('Mean lengths over episodes')
+    ax1.set_xlabel('Episode')
+    ax1.set_ylabel('Mean Length')
+    # Place the legend outside the first subplot
+    ax1.legend(loc='upper left', bbox_to_anchor=(1, 1))
+
+    # Configure the second subplot (mean rewards)
+    ax2.set_title('Mean cumulative rewards over episodes')
+    ax2.set_xlabel('Episode')
+    ax2.set_ylabel('Mean Reward')
+    # Place the legend outside the second subplot
+    ax2.legend(loc='upper left', bbox_to_anchor=(1, 1))
+
+    # Adjust layout to prevent overlap and ensure space for the legend
+    plt.tight_layout()
+    plt.subplots_adjust(right=0.8)
+
+    # Display the plots
+    plt.show()
+
+
