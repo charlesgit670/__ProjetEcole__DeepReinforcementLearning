@@ -29,6 +29,9 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
         self.bust_limits_colors = np.array([6, 7, 10])
         self.bust_limits_shape = np.array([9, 8, 6])
 
+        self.bust_limits_all = np.vstack((self.bust_limits_colors, self.bust_limits_shape))
+
+
         self.DICE_FACE = {
             1: [self.BALLOON_COLORS[2], self.BALLOON_SHAPES[0]],
             2: [self.BALLOON_COLORS[2], self.BALLOON_SHAPES[1]],
@@ -65,7 +68,7 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
         # Use itertools.product to generate all combinations, specifying repeat=n
         binary_numbers = itertools.product(bits, repeat=n)
         # Convert each combination to a binary string and return the list
-        initial_binary_numbers = [list(number) for number in binary_numbers]
+        initial_binary_numbers = (list(number) for number in binary_numbers)
 
         extended_binary_numbers = [number + [0] * (5 - len(number)) for number in initial_binary_numbers]
 
@@ -85,13 +88,23 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
     def act_with_action_id(self, action_id): #action_id: [0, 1, 0, 1, 0]
         assert not self.is_game_over(), "Attempted to act in a finished game."
 
+        if self.num_dice == 3:
+            vector_action_id = self.number_action_for3dice[action_id]
 
-        to_play = action_id * self.available_actions_mask() # [1, 0, 1, 1, 1] * [1, 1, 1, 0, 0] = [1, 0, 1, 0, 0]
+        elif self.num_dice == 4:
+            vector_action_id = self.number_action_for4dice[action_id]
+
+        else:
+            raise ValueError(f'number dice false {self.num_dice} ')
+
+
+
+        to_play = vector_action_id * self.available_actions_mask() # [1, 0, 1, 1, 1] * [1, 1, 1, 0, 0] = [1, 0, 1, 0, 0]
 
         if np.any(to_play == 1) and self.num_dice < 5:
             self.num_dice += 1
 
-            if not np.any(self.available_actions_ids() == to_play):
+            if not np.any(self.number_action_for4dice == to_play):
                 # Properly format the error message
                 available_actions = self.available_actions_ids()
                 error_message = f'DICE {to_play}  is not in the available actions: {available_actions}'
@@ -132,21 +145,28 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
     def play_dice_on_balloon(self):
 
         for index, value in enumerate(self.states_dice):
+
+
+            value = value.astype(int)
+
+
             if np.any(value == 0):
                 pass
             else:
                 # if state baloon not superior or equal to bust limit add column level
 
-                if not self.states_balloons[0][value[0]] >= self.bust_limits_colors[value[0]]:
 
-                    self.states_balloons[0][value[0]] += 1
 
-                if not self.states_balloons[1][value[1]] >= self.bust_limits_shape[value[1]]:
+                if not self.states_balloons[0][value[0]-1] >= self.bust_limits_colors[value[0]-1]:
 
-                    self.states_balloons[1][value[1]] += 1
+                    self.states_balloons[0][value[0]-1] += 1
 
-                if self.states_balloons[0][value[0]] >= self.bust_limits_colors[value[0]] \
-                        or self.states_balloons[1][value[1]] >= self.bust_limits_shape[value[1]]:
+                if not self.states_balloons[1][value[1]-1] >= self.bust_limits_shape[value[1]-1]:
+
+                    self.states_balloons[1][value[1]-1] += 1
+
+                if self.states_balloons[0][value[0]-1] >= self.bust_limits_colors[value[0]-1] \
+                        or self.states_balloons[1][value[1]-1] >= self.bust_limits_shape[value[1]-1]:
 
                     self.num_breaks += 1
                     self.dice_reset()
@@ -161,9 +181,9 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
     def available_actions_ids(self) -> list:
 
         if self.num_dice == 3:
-            return self.number_action_for3dice
+            return range(len(self.number_action_for3dice))
         elif self.num_dice == 4:
-            return self.number_action_for4dice
+            return range(len(self.number_action_for4dice))
 
         else :
             raise ValueError(f'number dice false {self.num_dice} ')
@@ -175,9 +195,16 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
 
 
         for index, value in enumerate(self.states_balloons):
+
+            value = value.astype(int)
+
             for index2, value2 in enumerate(value):
-                if value2 <= self.bust_limits_colors[index]:
-                    self.total_score += self.BALLOON_SCORES[index][index2][value2]
+
+
+
+
+                if value2 <= self.bust_limits_all[index][index2]:
+                    self.total_score += self.BALLOON_SCORES[index][index2][value2-1]
                 else:
                     raise ValueError(f'Balloon {index} is above busted level {value2} out of {self.bust_limits_colors[index]} ')
 
@@ -204,7 +231,7 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
 
 
     def reset(self):
-        self.states_balloons = np.zeros(6)
+        self.states_balloons = np.zeros((2,3))
         self.states_dice = np.zeros((5,2))
         self.num_breaks = 0
         self.num_dice = 3
@@ -220,14 +247,14 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
 # play_game()
 # play_game_agent_DRL()
 
-env = BalloonPOPEnv()
-
-print(list(env.BUST_LIMITS.values())[0])
-print(env.number_action_for3dice)
-print(env.states_dice)
-print(env.state_vector())
-print(env.num_dice)
-print(env.act_with_action_id([1, 0, 1, 1, 0]))
-print(env.states_dice)
-print(env.state_vector())
-print(env.num_dice)
+# env = BalloonPOPEnv()
+#
+# print(list(env.BUST_LIMITS.values())[0])
+# print(env.number_action_for3dice)
+# print(env.states_dice)
+# print(env.state_vector())
+# print(env.num_dice)
+# print(env.act_with_action_id([1, 0, 1, 1, 0]))
+# print(env.states_dice)
+# print(env.state_vector())
+# print(env.num_dice)
