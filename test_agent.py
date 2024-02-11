@@ -7,7 +7,7 @@ from src.DRL_algorithm.MCTS import Node, Policy_Player_MCTS
 
 from src.agent_env.TicTacToeEnv import TicTacToeEnv
 
-episodes = 100
+episodes = 50
 rewards = []
 moving_average = []
 
