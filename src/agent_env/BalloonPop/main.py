@@ -156,12 +156,18 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
 
 
 
-##TODO: 1. Implement the score function
+    ##TODO: 1. Implement the score function
     # def score(self) -> float:
     #
     #     for index, value in enumerate(self.states_balloons):
 
+    ##TODO: 2. Implement the available_actions_mask function
 
+    ##TODO: 3. Implement the reset_with_states function
+
+    ##TODO: 4. Implement the view function
+
+    ##TODO: 5. Implement the reset_random function
 
 
 
@@ -172,6 +178,7 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
         self.states_balloons = np.zeros(6)
         self.states_dice = np.zeros((5,2))
         self.num_breaks = 0
+        self.num_dice = 3
 
 
     def flatten(self, l):
