@@ -1,5 +1,5 @@
 from src.DRL_algorithm.DQN import deep_q_learning
-# from src.DRL_algorithm.DoubleDQN import double_deep_q_learning
+from src.DRL_algorithm.DoubleDQN import double_deep_q_learning
 # from src.DRL_algorithm.DoubleDQN_ExperienceReplay import double_deep_q_learning_with_experience_replay
 # from src.DRL_algorithm.DoubleDQN_PrioritizedExperienceReplay import double_deep_q_learning_with_prioritized_experience_replay
 # from src.DRL_algorithm.Reinforce import reinforce
@@ -9,11 +9,11 @@ from src.DRL_algorithm.DQN import deep_q_learning
 # from src.DRL_algorithm.MCTS2 import MCTS
 
 from src.agent_env.TicTacToeEnv import TicTacToeEnv
-
+from src.agent_env.BalloonPop.main import BalloonPOPEnv
 
 #================================= ENV =================================
-env = TicTacToeEnv(True)
-
+# env = TicTacToeEnv(True)
+env = BalloonPOPEnv()
 
 
 #================================= ALGOS =================================

@@ -158,6 +158,13 @@ def train_model(model, opt, buffer, gamma):
     y_tmp = r + gamma * np.max(apply_mask(Q_s_p, mask), axis=1) * (1 - is_game_over)
     y = Q_s.copy()
     ind = np.array([i for i in range(len(buffer))])
+    print('y', y)
+    print('ind', ind)
+    print('a nom', a)
+
+    print(f'len y {len(y)} len ind {len(ind)} len a {len(a)} len y_tmp {len(y_tmp)}')
+
+    print('a astyupe', a.astype(int))
     y[ind, a.astype(int)] = y_tmp
 
     my_train(model, opt, s, y)
