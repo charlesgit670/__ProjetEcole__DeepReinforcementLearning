@@ -49,7 +49,8 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
         self.num_breaks = 0
 
         self.state_size = 16 #6 ballons [2, 1, 3, 1, 0, 4] et 5 dés [color [0 || 1 || 2 || 3], shape [0 || 1 || 2 || 3]] * 5
-        self.action_size = 5 # si le joueur décide de relancer les dés 1, 3 et 4, le vecteur serait : [1, 0, 1, 1, 0]
+        # one hot state size [[0, 0, 1], [0, 1, 0], [1, 0, 0]] * 6 + [[0, 0, 1], [0, 1, 0], [1, 0, 0]] * 5
+        self.action_size = 16 # si le joueur décide de relancer les dés 1, 3 et 4, le vecteur serait : [1, 0, 1, 1, 0]
         self.states_balloons = np.zeros((2,3))
         self.states_dice = np.zeros((5,2))
         self.num_dice = 3
@@ -70,11 +71,22 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
         # Convert each combination to a binary string and return the list
         initial_binary_numbers = (list(number) for number in binary_numbers)
 
-        extended_binary_numbers = [number + [0] * (5 - len(number)) for number in initial_binary_numbers]
 
-        return extended_binary_numbers
+        new_numpy = []
+
+        for i in initial_binary_numbers:
+
+            if i[-1]:
+                new_numpy.append(i)
+
+            else:
+                new_numpy.insert(0, i)
+
+        return new_numpy
 
     def state_vector(self) -> np.array:
+
+        ##TODO: 2. Implement one hot encoding for the state vector and state dice and state_size
         state_vector = np.concatenate((self.states_balloons, self.states_dice), axis=None)
         return np.array(state_vector).flatten()
 
@@ -88,18 +100,28 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
     def act_with_action_id(self, action_id): #action_id: [0, 1, 0, 1, 0]
         assert not self.is_game_over(), "Attempted to act in a finished game."
 
-        if self.num_dice == 3:
-            vector_action_id = self.number_action_for3dice[action_id]
+        ##TODO: 1. modify vector_action_id not good shape
 
-        elif self.num_dice == 4:
+
+        if self.num_dice <= 4:
             vector_action_id = self.number_action_for4dice[action_id]
+
+            if self.num_dice == 3:
+                to_play = vector_action_id * self.available_actions_mask()[action_id]  # [1, 0, 1, 1, 1] * [1, 1, 1, 0, 0] = [1, 0, 1, 0, 0]
+
+            elif self.num_dice == 4:
+                to_play = vector_action_id * self.available_actions_mask()[action_id]
+
+            else :
+
+                print('here')
 
         else:
             raise ValueError(f'number dice false {self.num_dice} ')
 
 
 
-        to_play = vector_action_id * self.available_actions_mask() # [1, 0, 1, 1, 1] * [1, 1, 1, 0, 0] = [1, 0, 1, 0, 0]
+
 
         if np.any(to_play == 1) and self.num_dice < 5:
             self.num_dice += 1
@@ -139,7 +161,7 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
             self.dice_reset()
 
         else:
-            raise ValueError(f'Not determined action for {action_id} and for: {available_actions}')
+            raise ValueError(f'Not determined action for {action_id} and for mask toplay: {to_play} and for number dice {self.num_dice} and for vector_action_id {vector_action_id}')
 
 
     def play_dice_on_balloon(self):
@@ -180,9 +202,11 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
 
     def available_actions_ids(self) -> list:
 
-        if self.num_dice == 3:
-            return range(len(self.number_action_for3dice))
-        elif self.num_dice == 4:
+
+        #[[0,0,
+
+
+        if self.num_dice <= 4:
             return range(len(self.number_action_for4dice))
 
         else :
@@ -192,6 +216,8 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
 
     ##TODO: 1. Implement the score function
     def score(self) -> float:
+
+        ##TODO: 1. condtion break add old score and new score until break
 
 
         for index, value in enumerate(self.states_balloons):
@@ -213,9 +239,10 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
 
     def available_actions_mask(self) -> np.array:
         if self.num_dice == 3:
-            return np.array([1, 1, 1, 0, 0])
+
+            return np.array([1] * 8 + [0] * 8)
         elif self.num_dice == 4:
-            return np.array([1, 1, 1, 1, 0])
+            return np.array([1] * 16)
         else:
             raise ValueError(f'number dice false {self.num_dice} ')
 
@@ -250,7 +277,7 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
 # env = BalloonPOPEnv()
 #
 # print(list(env.BUST_LIMITS.values())[0])
-# print(env.number_action_for3dice)
+# print(env.number_action_for4dice)
 # print(env.states_dice)
 # print(env.state_vector())
 # print(env.num_dice)
