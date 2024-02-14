@@ -109,9 +109,9 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
 
             len_col = bust_limits_flatten[index]
 
-            onehotcolumn = np.zeros((len_col), dtype=int)
+            onehotcolumn = np.zeros((len_col + 1), dtype=int)
 
-            onehotcolumn[column-1] = 1
+            onehotcolumn[column] = 1
 
             onehottotal = np.concatenate((onehottotal, onehotcolumn))
 
