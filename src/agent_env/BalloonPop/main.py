@@ -48,11 +48,11 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
 
         self.num_breaks = 0
 
-        self.state_size = 16 #6 ballons [2, 1, 3, 1, 0, 4] et 5 dés [color [0 || 1 || 2 || 3], shape [0 || 1 || 2 || 3]] * 5
+        self.state_size = 86 #6 ballons [2, 1, 3, 1, 0, 4] et 5 dés [color [0 || 1 || 2 || 3], shape [0 || 1 || 2 || 3]] * 5
         # one hot state size [[0, 0, 1], [0, 1, 0], [1, 0, 0]] * 6 + [[0, 0, 1], [0, 1, 0], [1, 0, 0]] * 5
         self.action_size = 16 # si le joueur décide de relancer les dés 1, 3 et 4, le vecteur serait : [1, 0, 1, 1, 0]
-        self.states_balloons = np.zeros((2,3))
-        self.states_dice = np.zeros((5,2))
+        self.states_balloons = np.zeros((2,3), dtype=int)
+        self.states_dice = np.zeros((5,2), dtype=int)
         self.states_dice[:3, :2] = np.random.randint(1, 4, size=(3, 2))
         self.num_dice = 3
         self.total_score = 0
@@ -91,9 +91,50 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
 
     def state_vector(self) -> np.array:
 
+        onehotdice = self.dice_to_onehot(self.states_dice)
+
+        onehotboard = self.board_to_onehot(self.states_balloons)
+
         ##TODO: 2. Implement one hot encoding for the state vector and state dice and state_size
-        state_vector = np.concatenate((self.states_balloons, self.states_dice), axis=None)
+        state_vector = np.concatenate((onehotboard, onehotdice), axis=None)
         return np.array(state_vector).flatten()
+
+    def board_to_onehot(self, states_balloons):
+
+        onehottotal = np.array([], dtype=int)
+
+        bust_limits_flatten = np.array(list(self.BUST_LIMITS.values())).flatten()
+
+        for index, column in enumerate(np.array(states_balloons).flatten()):
+
+            len_col = bust_limits_flatten[index]
+
+            onehotcolumn = np.zeros((len_col), dtype=int)
+
+            onehotcolumn[column-1] = 1
+
+            onehottotal = np.concatenate((onehottotal, onehotcolumn))
+
+        return onehottotal
+
+    def dice_to_onehot(self, state_dice):
+
+        onehottotal = np.array([], dtype=int)
+
+        for color, shape in state_dice:
+            onehotstatecolor = np.zeros((4), dtype=int)
+
+            onehotstatecolor[color] = 1
+
+            onehotstateshape = np.zeros((4), dtype=int)
+
+            onehotstateshape[shape] = 1
+
+            onehotdice = np.concatenate((onehotstatecolor, onehotstateshape), dtype=int)
+
+            onehottotal = np.concatenate((onehottotal, onehotdice))
+
+        return onehottotal
 
     def is_game_over(self) -> bool:
 
@@ -145,6 +186,7 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
                     self.states_dice[index, :2] = np.random.randint(1, 4, size=(1, 2))
 
             if self.num_dice == 5:
+
 
                 self.play_dice_on_balloon()
                 self.dice_reset()
@@ -216,7 +258,7 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
 
 
     def dice_reset(self):
-        self.states_dice = np.zeros((5,2))
+        self.states_dice = np.zeros((5,2), dtype=int)
         self.states_dice[:3, :2] = np.random.randint(1, 4, size=(3, 2))
         self.num_dice = 3
 
@@ -275,7 +317,7 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
 
 
     def reset(self):
-        self.states_balloons = np.zeros((2,3))
+        self.states_balloons = np.zeros((2,3), dtype=int)
         self.dice_reset()
         self.num_breaks = 0
         self.total_score = 0
