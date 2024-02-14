@@ -6,13 +6,14 @@ from tqdm import tqdm
 
 from src.agent_env import SingleAgentEnv
 
-def random_rollout(env: SingleAgentEnv, max_time=1):
+def random_rollout(env: SingleAgentEnv, max_iteration=1000):
     new_env = copy.copy(env)
     init_states = env.state_vector()
     resultat_storage = {a: (0, 0) for a in env.available_actions_ids()}
 
-    start_time = time.time()
-    while time.time() - start_time < max_time:
+    # start_time = time.time()
+    # while time.time() - start_time < max_time:
+    for _ in range(max_iteration):
         new_env.reset_with_states(init_states)
         aa = new_env.available_actions_ids()
         first_a = np.random.choice(aa)
@@ -28,7 +29,7 @@ def random_rollout(env: SingleAgentEnv, max_time=1):
     best_action = max(action_played, key=lambda k: resultat_storage[k][1] / resultat_storage[k][0])
     return best_action
 
-def random_rollout_evaluation(env: SingleAgentEnv, gamma: float = 0.99999, time_per_action: float = 0.1, max_episodes_count: int = 100):
+def random_rollout_evaluation(env: SingleAgentEnv, gamma: float = 0.99999, max_iteration: int = 1000, max_episodes_count: int = 100):
     # used for logs
     lenght_episodes = []
     reward_episodes = []
@@ -37,7 +38,7 @@ def random_rollout_evaluation(env: SingleAgentEnv, gamma: float = 0.99999, time_
         G = 0
         env.reset()
         while not env.is_game_over():
-            a = random_rollout(env, max_time=time_per_action)
+            a = random_rollout(env, max_iteration=max_iteration)
 
             old_score = env.score()
             env.act_with_action_id(a)
@@ -49,6 +50,6 @@ def random_rollout_evaluation(env: SingleAgentEnv, gamma: float = 0.99999, time_
         lenght_episodes.append(lenght_episode)
         reward_episodes.append(G)
 
-    print(f"With a {time_per_action} seconds by action we got :")
+    print(f"With {max_iteration} iterations during exploration we got :")
     print(f"Mean score {round(np.mean(reward_episodes), 2)}")
     print(f"Mean episode lenght {round(np.mean(lenght_episodes), 2)}")

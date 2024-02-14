@@ -71,7 +71,7 @@ class Node:
 
         return env.score()
 
-    def explore(self, env, c, max_time=1):
+    def explore(self, env, c, max_iteration):
 
         '''
         The search along the tree is as follows:
@@ -83,8 +83,9 @@ class Node:
         Repeat until time is reached
         '''
 
-        start_time = time.time()
-        while time.time() - start_time < max_time:
+        # start_time = time.time()
+        # while time.time() - start_time < max_time:
+        for _ in range(max_iteration):
             new_env = copy.deepcopy(env)
             # SELECTION
             current = self
@@ -133,7 +134,7 @@ class Node:
 def ISMCTS(env: SingleAgentEnv,
            gamma: float = 0.99999,
            c: float = np.sqrt(2),
-           time_per_action: float = 0.1,
+           max_iteration: int = 1000,
            max_episodes_count: int = 100):
     # used for logs
     lenght_episodes = []
@@ -150,7 +151,7 @@ def ISMCTS(env: SingleAgentEnv,
         # MCTS_tree = ref_root
         while not env.is_game_over():
             MCTS_tree = Node()
-            MCTS_tree.explore(copy.deepcopy(env), c, time_per_action)
+            MCTS_tree.explore(copy.deepcopy(env), c, max_iteration)
             MCTS_tree, a = MCTS_tree.next(env.available_actions_ids())
 
             old_score = env.score()
@@ -163,7 +164,7 @@ def ISMCTS(env: SingleAgentEnv,
         lenght_episodes.append(lenght_episode)
         reward_episodes.append(G)
 
-    print(f"With a {time_per_action} seconds by action we got :")
+    print(f"With {max_iteration} iterations during exploration we got :")
     print(f"Mean score {round(np.mean(reward_episodes), 2)}")
     print(f"Mean episode lenght {round(np.mean(lenght_episodes), 2)}")
 
