@@ -56,6 +56,10 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
         self.num_dice = 3
         self.total_score = 0
 
+        self.list_total_score = np.array([])
+
+        self.scoring = 0
+
         self.number_action_for3dice = self.generate_binary_numbers(3)
         self.number_action_for4dice = self.generate_binary_numbers(4)
 
@@ -106,21 +110,16 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
         if self.num_dice <= 4:
             vector_action_id = self.number_action_for4dice[action_id]
 
-            if self.num_dice == 3:
-                to_play = vector_action_id * self.available_actions_mask()[action_id]  # [1, 0, 1, 1, 1] * [1, 1, 1, 0, 0] = [1, 0, 1, 0, 0]
+            action_mask_for_id = self.dice_mask()
 
-            elif self.num_dice == 4:
-                to_play = vector_action_id * self.available_actions_mask()[action_id]
-
-            else :
-
-                print('here')
+            to_play = vector_action_id * action_mask_for_id  # [1, 0, 1, 1, 1] * [1, 1, 1, 0, 0] = [1, 0, 1, 0, 0]
 
         else:
             raise ValueError(f'number dice false {self.num_dice} ')
 
 
-
+        #convert to_play to numpy array
+        to_play = np.array(to_play)
 
 
         if np.any(to_play == 1) and self.num_dice < 5:
@@ -191,6 +190,21 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
                         or self.states_balloons[1][value[1]-1] >= self.bust_limits_shape[value[1]-1]:
 
                     self.num_breaks += 1
+                    for index, value in enumerate(self.states_balloons):
+
+                        value = value.astype(int)
+
+                        for index2, value2 in enumerate(value):
+
+                            if value2 <= self.bust_limits_all[index][index2]:
+                                self.total_score += self.BALLOON_SCORES[index][index2][value2 - 1]
+
+
+                            else:
+                                raise ValueError(
+                                    f'Balloon {index} is above busted level {value2} out of {self.bust_limits_colors[index]} ')
+
+                    self.list_total_score = np.append(self.list_total_score, self.total_score)
                     self.dice_reset()
                     return None
 
@@ -198,6 +212,7 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
     def dice_reset(self):
         self.states_dice = np.zeros((5,2))
         self.num_dice = 3
+
 
 
     def available_actions_ids(self) -> list:
@@ -220,22 +235,17 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
         ##TODO: 1. condtion break add old score and new score until break
 
 
-        for index, value in enumerate(self.states_balloons):
-
-            value = value.astype(int)
-
-            for index2, value2 in enumerate(value):
-
-
-
-
-                if value2 <= self.bust_limits_all[index][index2]:
-                    self.total_score += self.BALLOON_SCORES[index][index2][value2-1]
-                else:
-                    raise ValueError(f'Balloon {index} is above busted level {value2} out of {self.bust_limits_colors[index]} ')
-
         return self.total_score
     #     for index, value in enumerate(self.states_balloons):
+
+    def dice_mask(self):
+
+        if self.num_dice == 3:
+            return np.array([1, 1, 1, 0])
+        elif self.num_dice == 4:
+            return np.array([1, 1, 1, 1])
+        else:
+            raise ValueError(f'number dice false {self.num_dice} ')
 
     def available_actions_mask(self) -> np.array:
         if self.num_dice == 3:
@@ -263,6 +273,8 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
         self.num_breaks = 0
         self.num_dice = 3
         self.total_score = 0
+        self.list_total_score = np.array([])
+        self.scoring = 0
 
 
 

@@ -37,10 +37,13 @@ def play_random(env :SingleAgentEnv):
 def main():
     env = BalloonPOPEnv()
     score = []
-    for i  in range(5_000):
+    start_time = time.time()
+    for i  in range(1_000):
         score.append(play_random(env))
 
         print(f'game {i} score: {score[-1]}')
+
+    print(f'elapsed time: {time.time() - start_time}')
 
     print('moy score:', np.mean(score))
 
@@ -60,5 +63,5 @@ def main_timed():
     #average random player score = 42
 
 if __name__ == '__main__':
-    # main()
-    main_timed()
+    main()
+    # main_timed()

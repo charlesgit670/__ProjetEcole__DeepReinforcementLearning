@@ -65,11 +65,11 @@ for e in range(episodes):
 
         reward_e = reward_e + reward
 
-        new_game = deepcopy(game)
+        # new_game = deepcopy(game)
 
-        if not done:
-
-            mytree = Node(new_game, False, 0, observation, 0)
+        # if not done:
+        #
+        #     mytree = Node(new_game, False, 0, observation, 0)
 
         # game.render() # uncomment this if you want to see your agent in action!
 

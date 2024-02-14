@@ -199,7 +199,11 @@ class Node:
         '''
 
         if self.done:
-            return 0
+            reward = self.game.score()
+            return reward
+            # v = v + reward
+
+
 
         v = 0
         done = False
@@ -269,7 +273,7 @@ class Node:
         return max_child, max_child.action_index
 
 
-MCTS_POLICY_EXPLORE = 200_000  # MCTS exploring constant: the higher, the more reliable, but slower in execution time
+MCTS_POLICY_EXPLORE = 2_000  # MCTS exploring constant: the higher, the more reliable, but slower in execution time
 
 
 def Policy_Player_MCTS(mytree):
