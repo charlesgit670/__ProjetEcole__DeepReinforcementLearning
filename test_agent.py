@@ -6,6 +6,8 @@ import matplotlib.animation as animation
 from src.DRL_algorithm.MCTS import Node, Policy_Player_MCTS
 
 from src.agent_env.TicTacToeEnv import TicTacToeEnv
+from src.agent_env.BalloonPop.main import BalloonPOPEnv
+
 
 episodes = 50
 rewards = []
@@ -25,7 +27,7 @@ Here we are experimenting with our implementation:
 for e in range(episodes):
 
     reward_e = 0
-    game = TicTacToeEnv()
+    game = BalloonPOPEnv()
     observation = game.reset()
     done = False
 

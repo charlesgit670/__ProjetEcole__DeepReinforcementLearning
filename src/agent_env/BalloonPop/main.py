@@ -53,6 +53,7 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
         self.action_size = 16 # si le joueur décide de relancer les dés 1, 3 et 4, le vecteur serait : [1, 0, 1, 1, 0]
         self.states_balloons = np.zeros((2,3))
         self.states_dice = np.zeros((5,2))
+        self.states_dice[:3, :2] = np.random.randint(1, 4, size=(3, 2))
         self.num_dice = 3
         self.total_score = 0
 
@@ -123,7 +124,12 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
 
 
         if np.any(to_play == 1) and self.num_dice < 5:
+
             self.num_dice += 1
+
+            # add new dice value to the states_dice
+
+            self.states_dice[self.num_dice - 1, :2] = np.random.randint(1, 4, size=(1, 2))
 
             if not np.any(self.number_action_for4dice == to_play):
                 # Properly format the error message
@@ -136,7 +142,7 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
                 if value == 1:
 
 
-                    self.states_dice[index] = np.random.randint(1, 4)
+                    self.states_dice[index, :2] = np.random.randint(1, 4, size=(1, 2))
 
             if self.num_dice == 5:
 
@@ -211,6 +217,7 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
 
     def dice_reset(self):
         self.states_dice = np.zeros((5,2))
+        self.states_dice[:3, :2] = np.random.randint(1, 4, size=(3, 2))
         self.num_dice = 3
 
 
@@ -269,9 +276,8 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
 
     def reset(self):
         self.states_balloons = np.zeros((2,3))
-        self.states_dice = np.zeros((5,2))
+        self.dice_reset()
         self.num_breaks = 0
-        self.num_dice = 3
         self.total_score = 0
         self.list_total_score = np.array([])
         self.scoring = 0

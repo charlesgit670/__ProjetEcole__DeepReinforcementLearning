@@ -29,6 +29,7 @@ def play_random(env :SingleAgentEnv):
 
         flat_aa = np.array(aa).flatten()
         a = np.random.choice(aa)
+        view_action = env.number_action_for4dice[a]
         env.act_with_action_id(a)
 
 
