@@ -20,7 +20,7 @@ env = BalloonPOPEnv()
 #================================= ALGOS =================================
 # q_learning(env, alpha=0.3, epsilon=0.05, max_episodes_count=10000)
 # deep_q_learning(env, max_episodes_count=100_000)
-# double_deep_q_learning(env, max_episodes_count=10000)
+double_deep_q_learning(env, max_episodes_count=100_000)
 # double_deep_q_learning_with_experience_replay(env, max_episodes_count=10000)
 # double_deep_q_learning_with_prioritized_experience_replay(env, max_episodes_count=10000)
 
@@ -28,7 +28,7 @@ env = BalloonPOPEnv()
 # reinforce_mean_baseline(env, max_episodes_count=10000)
 # reinforce_actor_critic(env, max_episodes_count=10000)
 
-ppo_a2c(env, lr_policy=0.001, lr_value=0.001, max_episodes_count=100_000)
+# ppo_a2c(env, lr_policy=0.001, lr_value=0.001, max_episodes_count=100_000)
 
 # random_rollout(env, max_time=10000)
 # ISMCTS(env, time_per_action=0.01, max_episodes_count=10000)

@@ -48,7 +48,7 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
 
         self.num_breaks = 0
 
-        self.state_size = 86 #6 ballons [2, 1, 3, 1, 0, 4] et 5 dés [color [0 || 1 || 2 || 3], shape [0 || 1 || 2 || 3]] * 5
+        self.state_size = 16 #6 ballons [2, 1, 3, 1, 0, 4] et 5 dés [color [0 || 1 || 2 || 3], shape [0 || 1 || 2 || 3]] * 5
         # one hot state size [[0, 0, 1], [0, 1, 0], [1, 0, 0]] * 6 + [[0, 0, 1], [0, 1, 0], [1, 0, 0]] * 5
         self.action_size = 16 # si le joueur décide de relancer les dés 1, 3 et 4, le vecteur serait : [1, 0, 1, 1, 0]
         self.states_balloons = np.zeros((2,3), dtype=int)
