@@ -6,13 +6,15 @@ import copy
 
 class CantStopGame:
     def __init__(self, logs: bool = True):
-        self.board = self.initialize_board()
+
         self.current_player = 0
         self.blocked_columns = [0, 0]
         # self.active_columns = set()
         self.last_dice_roll = []
         self.is_over = False
         self.logs = logs
+        self.reward = 0
+        self.board = self.reset()
 
     def roll_dice(self):
 
@@ -26,9 +28,11 @@ class CantStopGame:
             (dice_roll[0] + dice_roll[3], dice_roll[1] + dice_roll[2])
         ]
 
-    def initialize_board(self):
+    def reset(self):
 
         column_lengths = {2: 3, 3: 5, 4: 7, 5: 9, 6: 11, 7: 13, 8: 11, 9: 9, 10: 7, 11: 5, 12: 3}
+
+        self.reward = 0
 
         self.active_columns = set()
 
@@ -64,12 +68,18 @@ class CantStopGame:
             if not self.board[comb[0]]['blocked'] and not self.board[comb[1]]['blocked']:
                 valid_combinations.append(comb)
 
+            # elif not self.board[comb[0]]['blocked'] and self.board[comb[1]]['blocked']:
+            #     valid_combinations.append((comb[0],0))
+            #
+            # elif self.board[comb[0]]['blocked'] and not self.board[comb[1]]['blocked']:
+            #     valid_combinations.append((comb[1],0))
+
         if self.logs: print("Valid combinations:", valid_combinations)
         return valid_combinations
 
     def step(self, action):
 
-        reward = 0
+        self.reward = 0
 
         columns_to_advance = action
         if self.logs: print("Selected columns:", columns_to_advance)
@@ -89,118 +99,155 @@ class CantStopGame:
                 self.board[col]["blocked"] = True
                 self.blocked_columns[self.current_player] += 1
                 if self.logs: print(f"Player {self.current_player + 1} has blocked column {col}.")
-                reward += 1
+                self.reward += 1
 
         if self.blocked_columns[self.current_player] == 3:
             self.is_over = True
 
             if self.current_player == 0:
                 if self.logs: print(f"Win. Player {self.current_player + 1} is the winner")
-                reward += 2
+                self.reward += 2
             else:
 
                 if self.logs: print(f"Loose. Player {self.current_player + 1} is the winner")
-                reward = -2
+                self.reward = -2
 
-            return reward
 
         self.show_board_status()
-        return reward
 
-    def play(self):
+    def state_vector(self) -> np.array:
+        return np.array([self.board[col]["progress"] for col in self.board])
 
-        start_time = time.perf_counter()
+    def is_game_over(self) -> bool:
+        return self.is_over
 
-        turn_number = 0
+    def available_actions_ids(self) -> list:
 
-        while not self.is_over:
-            if self.logs: print(f"\nPlayer {self.current_player + 1}'s turn")
+        # tuples_array = np.empty(len(self.possible_actions()), dtype=object)
+        #
+        # tuples_array[:] = self.possible_actions()
 
-            # Model Turn
-            if self.current_player == 0:
+        # numpy_array = np.array(self.possible_actions())
 
-                if self.logs: print("IA turn", turn_number)
+        # tuples_array = np.array(self.possible_actions(), dtype=object)
 
-                if turn_number == 0:
-                    saved_board = copy.deepcopy(self.board)
-                    if self.logs: print("Following board saved : "), self.show_board_status()
+        return self.possible_actions()
 
-                self.active_columns = set()
+    def available_actions_mask(self) -> np.array:
+        aa = np.zeros(12)
+        a=self.possible_actions()
+        for i in range(len(a)):
+            aa[i] = 1
+        return aa
 
-                valid_actions = self.possible_actions()
+    def act_with_action_id(self, action_id: int):
+##TODO add change player action ID last bit, available action ID = number
 
-                if not valid_actions:
-                    if self.logs: print("No possible moves")
+        if action_id[1] == 0:
+            action_id = (action_id[0],)
 
-                    if turn_number > 0:
-                        self.show_board_status()
-                        if self.logs: print("No possibility after choised to contnue, board restored")
-                        self.board = saved_board
-                        self.show_board_status()
+        self.step(action_id)
 
-                    self.current_player = 1 - self.current_player
-                    continue
+    def score(self) -> float:
 
-                # Select a random action
-                action = random.choice(valid_actions)
+        return self.reward
 
-                reward = self.step(action)
-                if self.logs: print("reward : ", reward)
-
-                # Continue or stop
-                if random.choice([True, False]):
-                    if self.logs: print("Player decides to stop.")
-                    self.current_player = 1 - self.current_player
-                    turn_number = 0
-
-                else:
-                    if self.logs: print("Player decides to continue.")
-                    turn_number += 1
-
-            # Random turn
-            else:
-
-                if self.logs: print("Random turn")
-
-                if turn_number == 0:
-                    saved_board = copy.deepcopy(self.board)
-                    if self.logs: print("Following board saved : "), self.show_board_status()
-
-                self.active_columns = set()
-
-                valid_actions = self.possible_actions()
-
-                if not valid_actions:
-                    if self.logs: print("No possible moves")
-
-                    if turn_number > 0:
-                        self.show_board_status()
-                        if self.logs: print("No possibility after choised to contnue, board restored")
-                        self.board = saved_board
-                        self.show_board_status()
-
-                    self.current_player = 1 - self.current_player
-                    continue
-
-                # Select a random action
-                action = random.choice(valid_actions)
-
-                reward = self.step(action)
-                if self.logs: print("reward : ", reward)
-
-                # continue or not
-                if random.choice([True, False]):
-                    if self.logs: print("Player decides to stop.")
-                    self.current_player = 1 - self.current_player
-                    turn_number = 0
-                else:
-                    if self.logs: print("Player decides to continue.")
-                    turn_number += 1
-
-        end_time = time.perf_counter()
-        duration = end_time - start_time
-        print(f"Total game time: {duration:.6f} seconds.")
-
-
-game = CantStopGame(logs=True)
-game.play()
+#
+#
+#     def play(self):
+#
+#         start_time = time.perf_counter()
+#
+#         turn_number = 0
+#
+#         while not self.is_over:
+#             if self.logs: print(f"\nPlayer {self.current_player + 1}'s turn")
+#
+#             # Model Turn
+#             if self.current_player == 0:
+#
+#                 if self.logs: print("IA turn", turn_number)
+#
+#                 if turn_number == 0:
+#                     saved_board = copy.deepcopy(self.board)
+#                     if self.logs: print("Following board saved : "), self.show_board_status()
+#
+#                 self.active_columns = set()
+#
+#                 valid_actions = self.possible_actions()
+#
+#                 if not valid_actions:
+#                     if self.logs: print("No possible moves")
+#
+#                     if turn_number > 0:
+#                         self.show_board_status()
+#                         if self.logs: print("No possibility after choised to contnue, board restored")
+#                         self.board = saved_board
+#                         self.show_board_status()
+#
+#                     self.current_player = 1 - self.current_player
+#                     continue
+#
+#                 # Select a random action
+#                 action = random.choice(valid_actions)
+#
+#                 reward = self.step(action)
+#                 if self.logs: print("reward : ", reward)
+#
+#                 # Continue or stop
+#                 if random.choice([True, False]):
+#                     if self.logs: print("Player decides to stop.")
+#                     self.current_player = 1 - self.current_player
+#                     turn_number = 0
+#
+#                 else:
+#                     if self.logs: print("Player decides to continue.")
+#                     turn_number += 1
+#
+#             # Random turn
+#             else:
+#
+#                 if self.logs: print("Random turn")
+#
+#                 if turn_number == 0:
+#                     saved_board = copy.deepcopy(self.board)
+#                     if self.logs: print("Following board saved : "), self.show_board_status()
+#
+#                 self.active_columns = set()
+#
+#                 valid_actions = self.possible_actions()
+#
+#                 if not valid_actions:
+#                     if self.logs: print("No possible moves")
+#
+#                     if turn_number > 0:
+#                         self.show_board_status()
+#                         if self.logs: print("No possibility after choised to contnue, board restored")
+#                         self.board = saved_board
+#                         self.show_board_status()
+#
+#                     self.current_player = 1 - self.current_player
+#                     continue
+#
+#                 # Select a random action
+#                 action = random.choice(valid_actions)
+#
+#                 reward = self.step(action)
+#                 if self.logs: print("reward : ", reward)
+#
+#                 # continue or not
+#                 if random.choice([True, False]):
+#                     if self.logs: print("Player decides to stop.")
+#                     self.current_player = 1 - self.current_player
+#                     turn_number = 0
+#                 else:
+#                     if self.logs: print("Player decides to continue.")
+#                     turn_number += 1
+#
+#         end_time = time.perf_counter()
+#         duration = end_time - start_time
+#         print(f"Total game time: {duration:.6f} seconds.")
+#
+#
+# game = CantStopGame(logs=True)
+# game.play()

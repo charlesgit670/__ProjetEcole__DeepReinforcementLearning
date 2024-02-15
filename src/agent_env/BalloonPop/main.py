@@ -91,13 +91,33 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
 
     def state_vector(self) -> np.array:
 
-        onehotdice = self.dice_to_onehot(self.states_dice)
+        # onehotdice = self.dice_to_onehot(self.states_dice)
+        #
+        # onehotboard = self.board_to_onehot(self.states_balloons)
 
-        onehotboard = self.board_to_onehot(self.states_balloons)
+        # score_in_state_balloon = self.board_to_scored_board()
 
         ##TODO: 2. Implement one hot encoding for the state vector and state dice and state_size
-        state_vector = np.concatenate((onehotboard, onehotdice), axis=None)
+        # state_vector = np.concatenate((self.states_dice, score_in_state_balloon), axis=None)
+
+        state_vector = np.concatenate((self.states_dice, self.states_balloons), axis=None)
+        # state_vector = np.concatenate((onehotdice, onehotboard), axis=None)
+
         return np.array(state_vector).flatten()
+
+
+    def board_to_scored_board(self):
+        state_score_value = np.array([])
+
+        for index, value in enumerate(self.states_balloons):
+
+            for index2, value2 in enumerate(value):
+
+
+                state_score_value = np.append(state_score_value, self.BALLOON_SCORES[index][index2][value2 - 1])
+
+        return state_score_value
+
 
     def board_to_onehot(self, states_balloons):
 
@@ -278,13 +298,16 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
 
 
 
-    ##TODO: 1. Implement the score function
     def score(self) -> float:
 
-        ##TODO: 1. condtion break add old score and new score until break
 
+        #tanh between 120 (-1 below) and 200 (1 above)
+        other_scoring = np.tanh((1/40)*(self.total_score - 160))
 
-        return self.total_score
+        #return total score
+        # return self.total_score
+
+        return other_scoring
     #     for index, value in enumerate(self.states_balloons):
 
     def dice_mask(self):

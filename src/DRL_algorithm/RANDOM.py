@@ -14,6 +14,7 @@ from src.DRL_algorithm.function_utils import apply_mask
 from src.agent_env import SingleAgentEnv
 
 from src.agent_env.BalloonPop.main import BalloonPOPEnv
+from src.agent_env.CantStopML.src.main import CantStopGame
 
 def play_random(env :SingleAgentEnv):
     '''
@@ -28,8 +29,12 @@ def play_random(env :SingleAgentEnv):
         mask = env.available_actions_mask()
 
         flat_aa = np.array(aa).flatten()
+
+        # selected_index = np.random.choice(aa.shape[0])
+        # a  = aa[selected_index]
+
         a = np.random.choice(aa)
-        view_action = env.number_action_for4dice[a]
+        # view_action = env.number_action_for4dice[a]
         env.act_with_action_id(a)
 
 
@@ -37,9 +42,10 @@ def play_random(env :SingleAgentEnv):
 
 def main():
     env = BalloonPOPEnv()
+    # env = CantStopGame(logs=False)
     score = []
     start_time = time.time()
-    for i  in range(1_000):
+    for i  in range(10_000):
         score.append(play_random(env))
 
         print(f'game {i} score: {score[-1]}')
