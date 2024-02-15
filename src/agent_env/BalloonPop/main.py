@@ -164,7 +164,9 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
         return False
 
     def act_with_action_id(self, action_id): #action_id: [0, 1, 0, 1, 0]
-        assert not self.is_game_over(), "Attempted to act in a finished game."
+        if self.is_game_over():
+            return
+        # assert not self.is_game_over(), "Attempted to act in a finished game."
 
         ##TODO: 1. modify vector_action_id not good shape
 
@@ -303,11 +305,11 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
 
         #tanh between 120 (-1 below) and 200 (1 above)
         other_scoring = np.tanh((1/40)*(self.total_score - 160))
-
-        #return total score
-        # return self.total_score
-
         return other_scoring
+
+
+        # return total score
+        return self.total_score
     #     for index, value in enumerate(self.states_balloons):
 
     def dice_mask(self):

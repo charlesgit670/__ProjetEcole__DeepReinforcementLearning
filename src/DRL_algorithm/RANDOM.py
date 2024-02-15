@@ -33,6 +33,8 @@ def play_random(env :SingleAgentEnv):
         # selected_index = np.random.choice(aa.shape[0])
         # a  = aa[selected_index]
 
+        print(aa)
+
         a = np.random.choice(aa)
         # view_action = env.number_action_for4dice[a]
         env.act_with_action_id(a)
@@ -41,11 +43,11 @@ def play_random(env :SingleAgentEnv):
     return env.score()
 
 def main():
-    env = BalloonPOPEnv()
-    # env = CantStopGame(logs=False)
+    # env = BalloonPOPEnv()
+    env = CantStopGame(logs=False)
     score = []
     start_time = time.time()
-    for i  in range(10_000):
+    for i  in range(1_000):
         score.append(play_random(env))
 
         print(f'game {i} score: {score[-1]}')

@@ -74,6 +74,12 @@ class CantStopGame:
             # elif self.board[comb[0]]['blocked'] and not self.board[comb[1]]['blocked']:
             #     valid_combinations.append((comb[1],0))
 
+        if not valid_combinations:
+
+            self.current_player = 1 - self.current_player
+            self.possible_actions()
+
+
         if self.logs: print("Valid combinations:", valid_combinations)
         return valid_combinations
 
@@ -131,7 +137,9 @@ class CantStopGame:
 
         # tuples_array = np.array(self.possible_actions(), dtype=object)
 
-        return self.possible_actions()
+        possible_actions = self.possible_actions()
+
+        return range(len(possible_actions))
 
     def available_actions_mask(self) -> np.array:
         aa = np.zeros(12)
@@ -142,6 +150,10 @@ class CantStopGame:
 
     def act_with_action_id(self, action_id: int):
 ##TODO add change player action ID last bit, available action ID = number
+
+        possible_actions = self.possible_actions()[action_id]
+
+        action_id = possible_actions
 
         if action_id[1] == 0:
             action_id = (action_id[0],)
