@@ -15,6 +15,7 @@ class CantStopGame:
         self.logs = logs
         self.reward = 0
         self.board = self.reset()
+        self.action = 0
 
     def roll_dice(self):
 
@@ -76,8 +77,14 @@ class CantStopGame:
 
         if not valid_combinations:
 
-            self.current_player = 1 - self.current_player
-            self.possible_actions()
+            if self.current_player == 0:
+                if self.logs: print("No valid combinations. Player 2 take leads.")
+                self.current_player = 1
+
+            else:
+                if self.logs: print("No valid combinations. Player 1 take leads.")
+                self.current_player = 0
+            self.player_random()
 
 
         if self.logs: print("Valid combinations:", valid_combinations)
@@ -122,7 +129,13 @@ class CantStopGame:
         self.show_board_status()
 
     def state_vector(self) -> np.array:
-        return np.array([self.board[col]["progress"] for col in self.board])
+        state_board = np.array([self.board[col]["progress"] for col in self.board])
+
+        self.actions = self.possible_actions()
+
+        state_all = np.concatenate((state_board, self.actions)).flatten()
+
+        return state_all
 
     def is_game_over(self) -> bool:
         return self.is_over
@@ -137,9 +150,9 @@ class CantStopGame:
 
         # tuples_array = np.array(self.possible_actions(), dtype=object)
 
-        possible_actions = self.possible_actions()
 
-        return range(len(possible_actions))
+
+        return range(len(self.actions) + 1)
 
     def available_actions_mask(self) -> np.array:
         aa = np.zeros(12)
@@ -150,6 +163,17 @@ class CantStopGame:
 
     def act_with_action_id(self, action_id: int):
 ##TODO add change player action ID last bit, available action ID = number
+
+        if action_id == 4:
+
+            self.current_player = 1 - self.current_player
+            return
+
+    def player_random(self):
+
+        action_id = random.choice(self.available_actions_ids())
+        self.act_with_action_id(action_id)
+
 
         possible_actions = self.possible_actions()[action_id]
 

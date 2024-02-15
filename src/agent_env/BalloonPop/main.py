@@ -299,6 +299,12 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
             raise ValueError(f'number dice false {self.num_dice} ')
 
 
+    def get_real_score(self):
+
+        return self.total_score
+
+
+
 
     def score(self) -> float:
 
@@ -309,7 +315,7 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
 
 
         # return total score
-        return self.total_score
+        # return self.total_score
     #     for index, value in enumerate(self.states_balloons):
 
     def dice_mask(self):
