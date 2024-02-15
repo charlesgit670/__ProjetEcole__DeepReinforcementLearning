@@ -310,12 +310,12 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
 
 
         #tanh between 120 (-1 below) and 200 (1 above)
-        other_scoring = np.tanh((1/40)*(self.total_score - 160))
-        return other_scoring
+        # other_scoring = (1/40)*(self.total_score - 160)
+        # return other_scoring
 
 
         # return total score
-        # return self.total_score
+        return self.total_score
     #     for index, value in enumerate(self.states_balloons):
 
     def dice_mask(self):
