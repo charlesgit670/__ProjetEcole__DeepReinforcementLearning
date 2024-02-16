@@ -29,13 +29,13 @@ env = CantStopGame(logs=False)
 # double_deep_q_learning_with_experience_replay(env, max_episodes_count=10000)
 # double_deep_q_learning_with_prioritized_experience_replay(env, max_episodes_count=10000)
 
-reinforce(env, lr = 0.15, max_episodes_count=10_000)
+reinforce(env, lr = 0.01, max_episodes_count=10_000)
 # reinforce_mean_baseline(env, max_episodes_count=10000)
 # reinforce_actor_critic(env, max_episodes_count=10000)
 
 # ppo_a2c(env, lr_policy=0.001, lr_value=0.001, max_episodes_count=10_000)
 
-# random_rollout(env)
+# random_rollout(env, max_time=10000)
 # ISMCTS(env, max_episodes_count=1)
 
 

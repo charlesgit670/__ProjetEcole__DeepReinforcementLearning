@@ -19,12 +19,12 @@ from src.visualization.log_analysis import plot_multiple_logs
 
 # plot_reward_lengh("logs/CantStopGame/deep_q_learning/logs_cautious_learner.json", 100)
 # plot_reward_lengh("logs/CantStopGame/random_evaluation/logs.json", 100)
-plot_reward_lengh("logs/CantStopGame/ppo_a2c/logs.json", 100)
+# plot_reward_lengh("logs/CantStopGame/ppo_a2c/logs.json", 100)
 
 # Multi logs plot
-log_paths = ['logs/TicTacToeEnv/deep_q_learning/logs_balanced_strategist.json',
-            'logs/TicTacToeEnv/deep_q_learning/logs_bold_explorer.json',
-            "logs/TicTacToeEnv/deep_q_learning/logs_cautious_learner.json",
-            "logs/TicTacToeEnv/deep_q_learning/logs.json"]
+log_paths = ["logs/CantStopGame/reinforce/logs_lr_0-1.json",
+"logs/CantStopGame/reinforce/logs_lr_0-01.json",
+"logs/CantStopGame/reinforce/logs_lr_0-001.json",
+"logs/CantStopGame/reinforce/logs_lr_0-15.json"]
 
 plot_multiple_logs(log_paths, 100)

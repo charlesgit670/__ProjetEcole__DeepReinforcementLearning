@@ -115,7 +115,7 @@ def reinforce(env: SingleAgentEnv,
         "reward_episodes": reward_episodes
     }
     logs_path = os.path.join('logs', env.__class__.__name__, 'reinforce')
-    logs_name = 'logs.json'
+    logs_name = 'logs_lr_0-15.json'
     if not os.path.exists(logs_path):
         os.makedirs(logs_path)
     with open(os.path.join(logs_path, logs_name), 'w') as file:
