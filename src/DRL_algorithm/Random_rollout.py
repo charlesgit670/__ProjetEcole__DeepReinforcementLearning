@@ -7,14 +7,15 @@ from tqdm import tqdm
 from src.agent_env import SingleAgentEnv
 
 def random_rollout(env: SingleAgentEnv, max_iteration=1000):
-    new_env = copy.copy(env)
-    init_states = env.state_vector()
+    # new_env = copy.deepcopy(env)
+    # init_states = env.state_vector()
     resultat_storage = {a: (0, 0) for a in env.available_actions_ids()}
 
     # start_time = time.time()
     # while time.time() - start_time < max_time:
     for _ in range(max_iteration):
-        new_env.reset_with_states(init_states)
+        new_env = copy.deepcopy(env)
+        # new_env.reset_with_states(init_states)
         aa = new_env.available_actions_ids()
         first_a = np.random.choice(aa)
         new_env.act_with_action_id(first_a)
