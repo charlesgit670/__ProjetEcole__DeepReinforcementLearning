@@ -307,7 +307,11 @@ class BalloonPOPEnv(SingleAgentDeepEnv):
 
 
         #tanh between 120 (-1 below) and 200 (1 above)
+<<<<<<< HEAD
         # other_scoring = np.tanh((1/40)*(self.total_score - 160))
+=======
+        # other_scoring = (1/40)*(self.total_score - 160)
+>>>>>>> 1e854e7d0a4fcc8c1f6dc153fe5569efe025e226
         # return other_scoring
 
 
