@@ -6,16 +6,26 @@ import copy
 
 class CantStopGame:
     def __init__(self, logs: bool = True):
+        self.logs = logs
+
+        self.COL_LEN = {2: 3, 3: 5, 4: 7, 5: 9, 6: 11, 7: 13, 8: 11, 9: 9, 10: 7, 11: 5, 12: 3}
+        self.state_size = 26
+        self.action_size = 4
 
         self.current_player = 0
         self.blocked_columns = [0, 0]
-        # self.active_columns = set()
+        self.active_columns = set()
         self.last_dice_roll = []
         self.is_over = False
-        self.logs = logs
+
         self.reward = 0
-        self.board = self.reset()
         self.action = 0
+        self.board = {column: {"length": length, "progress": [0, 0], "blocked": False} \
+                      for column, length in self.COL_LEN.items()}
+        self.actions = self.possible_actions()
+
+
+        self.reset()
 
     def roll_dice(self):
 
@@ -31,14 +41,20 @@ class CantStopGame:
 
     def reset(self):
 
-        column_lengths = {2: 3, 3: 5, 4: 7, 5: 9, 6: 11, 7: 13, 8: 11, 9: 9, 10: 7, 11: 5, 12: 3}
-
+        self.current_player = 0
+        self.blocked_columns = [0, 0]
+        self.last_dice_roll = []
+        self.is_over = False
         self.reward = 0
+        self.action = 0
+
 
         self.active_columns = set()
 
-        return {column: {"length": length, "progress": [0, 0], "blocked": False} for column, length in
-                column_lengths.items()}
+        self.board = {column: {"length": length, "progress": [0, 0], "blocked": False} \
+                      for column, length in self.COL_LEN.items()}
+
+
 
     def observe(self):
 
@@ -80,11 +96,53 @@ class CantStopGame:
             if self.current_player == 0:
                 if self.logs: print("No valid combinations. Player 2 take leads.")
                 self.current_player = 1
+                self.active_columns = set()
+                self.player_random()
+
+                letsste = 0
+                while not valid_combinations:
+
+                    self.last_dice_roll = self.roll_dice()
+                    if self.logs: print("Dices rolled:", self.last_dice_roll)
+                    combinations = self.get_combinations(self.last_dice_roll)
+
+                    valid_combinations = []
+                    for comb in combinations:
+                        if not self.board[comb[0]]['blocked'] and not self.board[comb[1]]['blocked']:
+                            valid_combinations.append(comb)
+
+                        # elif not self.board[comb[0]]['blocked'] and self.board[comb[1]]['blocked']:
+                        #     valid_combinations.append((comb[0],0))
+                        #
+                        # elif self.board[comb[0]]['blocked'] and not self.board[comb[1]]['blocked']:
+                        #     valid_combinations.append((comb[1],0))
+
+                return valid_combinations
 
             else:
                 if self.logs: print("No valid combinations. Player 1 take leads.")
                 self.current_player = 0
-            self.player_random()
+                self.active_columns = set()
+                letsste = 0
+                while not valid_combinations:
+
+                    self.last_dice_roll = self.roll_dice()
+                    if self.logs: print("Dices rolled:", self.last_dice_roll)
+                    combinations = self.get_combinations(self.last_dice_roll)
+
+                    valid_combinations = []
+                    for comb in combinations:
+                        if not self.board[comb[0]]['blocked'] and not self.board[comb[1]]['blocked']:
+                            valid_combinations.append(comb)
+
+                        # elif not self.board[comb[0]]['blocked'] and self.board[comb[1]]['blocked']:
+                        #     valid_combinations.append((comb[0], 0))
+                        #
+                        # elif self.board[comb[0]]['blocked'] and not self.board[comb[1]]['blocked']:
+                        #     valid_combinations.append((comb[1], 0))
+
+                return valid_combinations
+
 
 
         if self.logs: print("Valid combinations:", valid_combinations)
@@ -112,9 +170,9 @@ class CantStopGame:
                 self.board[col]["blocked"] = True
                 self.blocked_columns[self.current_player] += 1
                 if self.logs: print(f"Player {self.current_player + 1} has blocked column {col}.")
-                self.reward += 1
+                # self.reward += 1
 
-        if self.blocked_columns[self.current_player] == 3:
+        if self.blocked_columns[self.current_player] >= 3:
             self.is_over = True
 
             if self.current_player == 0:
@@ -131,9 +189,26 @@ class CantStopGame:
     def state_vector(self) -> np.array:
         state_board = np.array([self.board[col]["progress"] for col in self.board])
 
+        # print("current_player", self.current_player)
+
         self.actions = self.possible_actions()
 
-        state_all = np.concatenate((state_board, self.actions)).flatten()
+
+        actions_for_state = copy.deepcopy(self.actions)
+
+
+
+        if len(actions_for_state) < 3:
+            actions_for_state.extend([(0, 0)] * (3 - len(actions_for_state)))
+
+        # print("current_player", self.current_player)
+        #
+        # print("state_board", state_board)
+        # print('type state_board', type(state_board))
+        # print("self.actions", self.actions)
+        # print('type self.actions', type(self.actions))
+
+        state_all = np.concatenate((state_board, actions_for_state)).flatten()
 
         return state_all
 
@@ -142,40 +217,36 @@ class CantStopGame:
 
     def available_actions_ids(self) -> list:
 
-        # tuples_array = np.empty(len(self.possible_actions()), dtype=object)
-        #
-        # tuples_array[:] = self.possible_actions()
-
-        # numpy_array = np.array(self.possible_actions())
-
-        # tuples_array = np.array(self.possible_actions(), dtype=object)
-
 
 
         return range(len(self.actions) + 1)
 
     def available_actions_mask(self) -> np.array:
-        aa = np.zeros(12)
-        a=self.possible_actions()
+        aa = np.zeros(4)
+        a=self.actions
         for i in range(len(a)):
             aa[i] = 1
         return aa
 
     def act_with_action_id(self, action_id: int):
-##TODO add change player action ID last bit, available action ID = number
 
-        if action_id == 4:
+        if action_id == len(self.actions) :
 
-            self.current_player = 1 - self.current_player
-            return
+            if self.current_player == 0:
+                if self.logs: print("No valid combinations. Player 2 take leads.")
+                self.current_player = 1
+                self.active_columns = set()
+                self.player_random()
+                return
 
-    def player_random(self):
+            else:
+                if self.logs: print("No valid combinations. Player 1 take leads.")
+                self.current_player = 0
+                self.active_columns = set()
+                return
 
-        action_id = random.choice(self.available_actions_ids())
-        self.act_with_action_id(action_id)
 
-
-        possible_actions = self.possible_actions()[action_id]
+        possible_actions = self.actions[action_id]
 
         action_id = possible_actions
 
@@ -183,6 +254,11 @@ class CantStopGame:
             action_id = (action_id[0],)
 
         self.step(action_id)
+
+    def player_random(self):
+
+        action_id = random.choice(self.available_actions_ids())
+        self.act_with_action_id(action_id)
 
     def score(self) -> float:
 

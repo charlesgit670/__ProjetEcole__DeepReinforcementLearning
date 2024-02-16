@@ -15,6 +15,7 @@ from src.agent_env import SingleAgentEnv
 
 from src.agent_env.BalloonPop.main import BalloonPOPEnv
 from src.agent_env.CantStopML.src.main import CantStopGame
+from src.agent_env.TicTacToeEnv import TicTacToeEnv
 
 def play_random(env :SingleAgentEnv):
     '''
@@ -25,7 +26,16 @@ def play_random(env :SingleAgentEnv):
     while not env.is_game_over():
         s = env.state_vector()
 
+        s_len = len(s)
+
+        if s_len <= 26:
+            print(s)
+
+        # print(s)
+
         aa = env.available_actions_ids()
+
+
         mask = env.available_actions_mask()
 
         flat_aa = np.array(aa).flatten()
@@ -33,9 +43,10 @@ def play_random(env :SingleAgentEnv):
         # selected_index = np.random.choice(aa.shape[0])
         # a  = aa[selected_index]
 
-        print(aa)
 
         a = np.random.choice(aa)
+
+
         # view_action = env.number_action_for4dice[a]
         env.act_with_action_id(a)
 
@@ -45,6 +56,7 @@ def play_random(env :SingleAgentEnv):
 def main():
     # env = BalloonPOPEnv()
     env = CantStopGame(logs=False)
+    # env = TicTacToeEnv()
     score = []
     start_time = time.time()
     for i  in range(1_000):
@@ -59,7 +71,6 @@ def main():
 def main_timed():
     start_time = time.time()
     games_played = 0
-    env = BalloonPOPEnv()
     score = []
 
     while time.time() - start_time < 1:  # Loop until one second has passed

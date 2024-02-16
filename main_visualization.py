@@ -15,9 +15,11 @@ from src.visualization.log_analysis import plot_multiple_logs
 
 # plot_reward_lengh("logs/BalloonPOPEnv/reinforce/logs.json", 500)
 
-plot_reward_lengh("logs/BalloonPOPEnv/ppo_a2c/logs.json", 500)
+# plot_reward_lengh("logs/BalloonPOPEnv/ppo_a2c/logs.json", 500)
 
-
+# plot_reward_lengh("logs/CantStopGame/deep_q_learning/logs_cautious_learner.json", 100)
+# plot_reward_lengh("logs/CantStopGame/random_evaluation/logs.json", 100)
+plot_reward_lengh("logs/CantStopGame/ppo_a2c/logs.json", 100)
 
 # Multi logs plot
 log_paths = ['logs/TicTacToeEnv/deep_q_learning/logs_balanced_strategist.json',
