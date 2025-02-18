@@ -144,7 +144,7 @@ def reinforce_actor_critic(env: SingleAgentEnv,
         "reward_episodes": reward_episodes
     }
     logs_path = os.path.join('logs', env.__class__.__name__, 'reinforce_actor_critic')
-    logs_name = 'logs.json'
+    logs_name = f'lrp{lr_policy}_lrv{lr_value}.json'
     if not os.path.exists(logs_path):
         os.makedirs(logs_path)
     with open(os.path.join(logs_path, logs_name), 'w') as file:

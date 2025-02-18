@@ -3,6 +3,7 @@ import time
 import numpy as np
 import json
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 from src.agent_env import SingleAgentEnv
 
@@ -51,6 +52,41 @@ def random_rollout_evaluation(env: SingleAgentEnv, gamma: float = 0.99999, max_i
         lenght_episodes.append(lenght_episode)
         reward_episodes.append(G)
 
+    mean_reward = round(np.mean(reward_episodes), 2)
+    mean_lenght = round(np.mean(lenght_episodes), 2)
     print(f"With {max_iteration} iterations during exploration we got :")
-    print(f"Mean score {round(np.mean(reward_episodes), 2)}")
-    print(f"Mean episode lenght {round(np.mean(lenght_episodes), 2)}")
+    print(f"Mean score {mean_reward}")
+    print(f"Mean episode lenght {mean_lenght}")
+
+    return mean_reward, mean_lenght, max_iteration
+
+def plot_random_rollout_evaluation(env: SingleAgentEnv, list_of_max_iteration):
+    list_mean_reward = []
+    list_mean_lenght = []
+
+    for max_iter in list_of_max_iteration:
+        mean_reward, mean_lenght, max_iteration = random_rollout_evaluation(env, max_iteration=max_iter)
+        list_mean_reward.append(mean_reward)
+        list_mean_lenght.append(mean_lenght)
+
+    # Création de la figure avec subplots
+    fig, axs = plt.subplots(1, 2, figsize=(15, 5))
+
+    # Premier graphique - Length vs Max Iteration
+    axs[0].plot(list_of_max_iteration, list_mean_lenght, marker='o', color='b')
+    axs[0].set_xlabel('Max Iteration')
+    axs[0].set_ylabel('Length')
+    axs[0].set_title('Length as a function of Max Iteration')
+    axs[0].grid()
+
+    # Deuxième graphique - Reward vs Max Iteration
+    axs[1].plot(list_of_max_iteration, list_mean_reward, marker='o', color='r')
+    axs[1].set_xlabel('Max Iteration')
+    axs[1].set_ylabel('Reward')
+    axs[1].set_title('Reward as a function of Max Iteration')
+    axs[1].grid()
+
+    # Affichage des graphiques
+    plt.tight_layout()
+    plt.show()
+

@@ -43,7 +43,7 @@ def random_evaluation(env: SingleAgentEnv,
         "reward_episodes": reward_episodes
     }
     logs_path = os.path.join('logs', env.__class__.__name__, 'random_evaluation')
-    logs_name = 'logs.json'
+    logs_name = 'lr0.005_logs.json'
     if not os.path.exists(logs_path):
         os.makedirs(logs_path)
     with open(os.path.join(logs_path, logs_name), 'w') as file:

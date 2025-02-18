@@ -5,6 +5,7 @@ import time
 import json
 from tqdm import tqdm
 import joblib
+import matplotlib.pyplot as plt
 
 from src.agent_env import SingleAgentEnv
 
@@ -164,23 +165,40 @@ def ISMCTS(env: SingleAgentEnv,
         lenght_episodes.append(lenght_episode)
         reward_episodes.append(G)
 
+    mean_reward = round(np.mean(reward_episodes), 2)
+    mean_lenght = round(np.mean(lenght_episodes), 2)
     print(f"With {max_iteration} iterations during exploration we got :")
-    print(f"Mean score {round(np.mean(reward_episodes), 2)}")
-    print(f"Mean episode lenght {round(np.mean(lenght_episodes), 2)}")
+    print(f"Mean score {mean_reward}")
+    print(f"Mean episode lenght {mean_lenght}")
 
-    # # save logs
-    # dict_logs = {
-    #     "lenght_episodes": lenght_episodes,
-    #     "reward_episodes": reward_episodes
-    # }
-    # logs_path = os.path.join('logs', env.__class__.__name__, 'ISMCTS')
-    # logs_name = 'logs.json'
-    # if not os.path.exists(logs_path):
-    #     os.makedirs(logs_path)
-    # with open(os.path.join(logs_path, logs_name), 'w') as file:
-    #     json.dump(dict_logs, file)
-    #
-    # model_save_path = 'model/ISMCTS/'
-    # if not os.path.exists(model_save_path):
-    #     os.makedirs(model_save_path)
-    # joblib.dump(ref_root, os.path.join(model_save_path, 'ISMCTS_Tree_Object.joblib'))
+    return mean_reward, mean_lenght, max_iteration
+
+def plot_ISMCTS_evaluation(env: SingleAgentEnv, list_of_max_iteration):
+    list_mean_reward = []
+    list_mean_lenght = []
+
+    for max_iter in list_of_max_iteration:
+        mean_reward, mean_lenght, max_iteration = ISMCTS(env, max_iteration=max_iter)
+        list_mean_reward.append(mean_reward)
+        list_mean_lenght.append(mean_lenght)
+
+    # Création de la figure avec subplots
+    fig, axs = plt.subplots(1, 2, figsize=(15, 5))
+
+    # Premier graphique - Length vs Max Iteration
+    axs[0].plot(list_of_max_iteration, list_mean_lenght, marker='o', color='b')
+    axs[0].set_xlabel('Max Iteration')
+    axs[0].set_ylabel('Length')
+    axs[0].set_title('Length as a function of Max Iteration')
+    axs[0].grid()
+
+    # Deuxième graphique - Reward vs Max Iteration
+    axs[1].plot(list_of_max_iteration, list_mean_reward, marker='o', color='r')
+    axs[1].set_xlabel('Max Iteration')
+    axs[1].set_ylabel('Reward')
+    axs[1].set_title('Reward as a function of Max Iteration')
+    axs[1].grid()
+
+    # Affichage des graphiques
+    plt.tight_layout()
+    plt.show()

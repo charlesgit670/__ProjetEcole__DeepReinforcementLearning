@@ -1,7 +1,6 @@
 import random
 from collections import Counter
 import time
-import numpy as np
 
 
 
@@ -76,7 +75,7 @@ def is_busted(balloons_collected):
 
         if count >= BUST_LIMITS[color]:
 
-            print(f"Ooops! You busted! {color} exploded!")
+            # print(f"Ooops! You busted! {color} exploded!")
 
             return True
 
@@ -110,13 +109,13 @@ def play_turn(headless=False):
 
     rolled = roll_dice(number_of_dice, headless)
 
-    print(rolled)
+    # print(rolled)
 
 
     for index in range(number_of_dice):
 
         dice[index] = rolled[index]
-    print(f"You rolled: {dice}")
+    # print(f"You rolled: {dice}")
 
     while len(dice) < NUM_DICE:
 
@@ -129,7 +128,7 @@ def play_turn(headless=False):
 
             dice_to_reroll = [int(i) for i in dice_to_reroll.split()]
             dice = reroll_dice(dice, dice_to_reroll)
-            print(dice)
+            # print(dice)
 
 
         else:
@@ -139,8 +138,6 @@ def play_turn(headless=False):
 
 
     c = count_elements(dice)
-    print(c)
-    print("c")
 
     return c
 
@@ -170,27 +167,24 @@ def play_game(headless=False):
     """Play the Balloon Pop! game."""
     total_score = {color: 0 for color in BALLOONS}
     current_score = 0
-    print("Welcome to Balloon Pop!\n")
-    print("Your score is", current_score)
+    # print("Welcome to Balloon Pop!\n")
+    # print("Your score is", current_score)
 
     for turn in range(NUM_BREAKS):
 
         print(f"\n--- Turn {turn + 1} ---")
 
         while not is_busted(total_score):
-            print(f"Your accumulated balloons are {total_score}")
-            print(f"The ultimate bust limits are {BUST_LIMITS}")
+            # print(f"Your accumulated balloons are {total_score}")
+            # print(f"The ultimate bust limits are {BUST_LIMITS}")
             balloons_collected = play_turn()
             total_score = calculate_score(total_score, balloons_collected)
 
-            print('total_score')
-            print(total_score)
 
-
-        print(f"Your accumulated balloons are {total_score}")
+        # print(f"Your accumulated balloons are {total_score}")
         current_score += count_score(total_score)
-        print(f"Your current accumulated score is {current_score}")
-        total_score = {color: 0 for color in BALLOONS} #maybe it was reset balloons
+        # print(f"Your current accumulated score is {current_score}")
+        # total_score = {color: 0 for color in BALLOONS} #maybe it was reset balloons
 
 
 def play_game_agent_DRL(headless=True):
@@ -202,11 +196,11 @@ def play_game_agent_DRL(headless=True):
 
     for turn in range(NUM_BREAKS):
 
-        print(f"\n--- Turn {turn + 1} ---")
+        # print(f"\n--- Turn {turn + 1} ---")
 
         while not is_busted(total_score):
-            print(f"Your accumulated balloons are {total_score}")
-            print(f"The ultimate bust limits are {BUST_LIMITS}")
+            # print(f"Your accumulated balloons are {total_score}")
+            # print(f"The ultimate bust limits are {BUST_LIMITS}")
             balloons_collected = play_turn(headless)
             total_score = calculate_score(total_score, balloons_collected)
 

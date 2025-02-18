@@ -182,7 +182,7 @@ def ppo_a2c(env: SingleAgentEnv,
         "reward_episodes": reward_episodes
     }
     logs_path = os.path.join('logs', env.__class__.__name__, 'ppo_a2c')
-    logs_name = 'logs.json'
+    logs_name = f'c2{c2}_epochs{epochs}_batchsize{batch_size}_nsteps{n_steps}_1m_logs.json'
     if not os.path.exists(logs_path):
         os.makedirs(logs_path)
     with open(os.path.join(logs_path, logs_name), 'w') as file:

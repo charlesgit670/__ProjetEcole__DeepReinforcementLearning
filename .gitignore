@@ -162,4 +162,3 @@ cython_debug/
 # modèle et logs
 model/
 logs/
-
